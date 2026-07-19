@@ -1,7 +1,7 @@
-# Glass Wild — Godot 처음 시작 (그림판 와이어)
+# Glass Wild — Godot 처음 시작 (흑백 와이어)
 
 Godot를 처음 쓰는 사람을 위한 **이 저장소 맞춤** 안내입니다.  
-최종 도트 아트는 나중에 두고, 지금은 **그림판처럼 색 면**으로 화면만 만듭니다.
+최종 도트 아트는 나중에 두고, 지금은 **흑 배경 + 흰 선** 와이어프레임으로 관찰/편집만 익힙니다.
 
 본격 MVP Godot 구현은 [D-008](../decisions/D-008-figma-exit-criteria.md) 이후입니다. 지금은 학습용입니다.
 
@@ -11,16 +11,12 @@ Godot를 처음 쓰는 사람을 위한 **이 저장소 맞춤** 안내입니다
 
 | 지금 하는 것 | 지금 안 하는 것 |
 |---|---|
-| 화면 전환 (대시보드 ↔ 관찰 ↔ 편집) | 도트 스프라이트·타일맵 |
-| `ColorRect` / `Label` / `Button` | 배경화면 투명 창 |
-| 사육장·생물 **자리**만 잡기 | 환경 시뮬·합사 판정 전체 |
+| 관찰 / 편집 모드 전환 | 도트 스프라이트·타일맵 |
+| 흑백 선 와이어 (`_draw`) | 배경화면 투명 창 |
+| **논리 셀** 0.5cm 스냅 · 편집 팔레트 | 환경 시뮬·합사 판정 전체 |
+| 사육장 규격 선택 · OS 창 리사이즈 | 채색 ColorRect UI |
 
-따라 하는 방법 두 가지:
-
-1. **이미 있는 샌드박스 열기** — 저장소의 [`../../godot/`](../../godot/) 를 Godot에서 Import 후 F5  
-2. **직접 만들기** — 아래 Step을 빈 프로젝트에서 따라 하기  
-
-둘 다 결과는 비슷합니다.
+따라 하기: 저장소 [`../../godot/`](../../godot/) 를 Godot에서 Import 후 F5.
 
 ## 1. Godot 설치
 
@@ -34,143 +30,89 @@ Godot를 처음 쓰는 사람을 위한 **이 저장소 맞춤** 안내입니다
 
 1. Godot 프로젝트 매니저 → **Import**
 2. `glass-wild/godot/project.godot` 선택
-3. 열리면 상단 **Play (F5)**
+3. **Play (F5)**
 
-성공: 회색·색 박스 UI가 뜨고 버튼으로 화면이 바뀝니다.
+성공:
+
+- 검은 화면 + 흰 선 사육장 프레임
+- 상단에서 규격 선택 · **편집** / **관찰로** 전환
+- 편집 시 우측 팔레트 · **표시 격자**(N칸마다)
+- 창 리사이즈에 UI가 따라감
 
 ## 3. 에디터 지도 (이 단계)
 
 | 패널 | 쓰는 이유 |
 |---|---|
-| Scene | 노드 트리 (화면 구조) |
-| FileSystem | `scenes/`, 스크립트 |
-| Inspector | 색·텍스트·크기 |
-| 중앙 뷰 | UI 배치 (Control) |
+| Scene | 노드 트리 (`main_wireframe.tscn`) |
+| FileSystem | `scenes/ui/` 스크립트 |
+| Inspector | 크기·앵커 |
+| 중앙 뷰 | UI (`Control`) |
 
-지금은 **UI용 `Control` 계열만** 씁니다. 생물용 `Node2D` / `CharacterBody2D`는 나중입니다.
+지금은 **UI용 `Control` + `_draw` 선**만 씁니다.
 
-## 4. 그림판 규칙
+## 4. 와이어프레임 · 논리 셀 규칙
 
-이미지 대신 단색으로 “그린다”고 생각하면 됩니다.
+용어: [`../core/glossary.md`](../core/glossary.md), 결정: [D-010](../decisions/D-010-logic-cell-edit-palette.md)
 
-| 역할 | 노드 |
+| 역할 | 구현 |
 |---|---|
-| 회색 UI 박스 | `Panel` 또는 `ColorRect` |
-| 글자 | `Label` (용어는 glossary: 사육장, 안정, 주의 …) |
-| 클릭 | `Button` |
-| 생물 자리 | 색 `ColorRect` + `Label` (`nerite_snail` 등) |
-| 격자 | 작은 `ColorRect`를 여러 개 |
+| **논리 셀** | 한 변 **0.5cm**. 스냅·저장 단위 |
+| **표시 격자** | 편집 시 N=4칸마다 선 (가독성). 스냅은 여전히 0.5cm |
+| 사육장 프레임 | `habitat_stage.gd` `_draw()` |
+| 생물 자리 | `wire_actor.gd` (관찰 시 배회) |
+| 편집 팔레트 | `edit_palette.gd` |
 
-이 단계에서는 도트 PNG·스프라이트 시트를 넣지 마세요.
+스프라이트 셀(px, D-002)과 논리 셀을 섞어 부르지 마세요.
 
-## 5. Step-by-step (직접 만들기)
+## 5. 샌드박스에서 확인할 것
 
-샌드박스를 고치지 않고 연습하려면 **새 씬**을 만들어도 됩니다. 목표는 샌드박스와 같습니다.
+### 관찰 모드 (기본)
 
-### Step 1 — 빈 메인
+- 사육장 측면 프레임 + 수역 구분 수평선
+- 배치한 동물이 있으면 자동 배회
+- 하단 `상태: 안정`
 
-1. Scene → New Scene → **User Interface** (`Control`)
-2. 루트 이름을 `MainWireframe`으로
-3. Inspector에서 전체 화면에 맞게 Anchor를 full rect
-4. Project Settings → Display → Window: Width **1920**, Height **1080** ([D-002](../decisions/D-002-resolution-sprite-size.md))
-5. Project → Project Settings → Application → Run → Main Scene에 이 씬 지정
+### 편집 모드
 
-성공: F5에 빈(또는 단색) 창이 1920×1080으로 뜸.
+1. **편집** → 우측 팔레트 + 표시 격자
+2. **지형** (벽지·땅·물): 클릭·드래그로 논리 셀 페인트
+3. **식물·이끼**: 클릭. 이끼(바닥)는 바닥 면, 이끼(벽지)는 벽지 면만 (`plant_surfaces`)
+4. **동물**: 클릭으로 논리 셀에 배치
+5. **관찰로** → 격자·팔레트 숨김, 동물 배회
 
-### Step 2 — 대시보드 (사육장 카드 3칸)
+### 사육장 규격 (가로×깊이×높이 cm)
 
-[`../ui/layout.md`](../ui/layout.md) **UI-02** 요약입니다.
+측면은 **가로:높이** 비율. 하단 라벨에 **논리 셀 개수**(예: 60×45 → 120×90). 기본: `60×45×45cm`.
 
-1. `MainWireframe` 아래 `Dashboard` (`Control`, full rect)
-2. 제목 `Label`: `사육장 대시보드`
-3. 가로로 `ColorRect` 카드 3개 — 각각 Label: `사육장 1` / `2` / `3`, 상태 `안정` 등
-4. 버튼 `관찰하기`
+| 규격 | 측면 비율 | 논리 셀 (W×H) |
+|---|---|---|
+| 30×30×45 | 2:3 | 60×90 |
+| 45×45×45 | 1:1 | 90×90 |
+| 60×45×45 | 4:3 | 120×90 |
+| 60×45×60 | 1:1 | 120×120 |
+| 90×45×60 | 3:2 | 180×120 |
+| 120×60×60 | 2:1 | 240×120 |
 
-성공: 카드 세 개가 보이고 상태가 읽힘.
+### 창 리사이즈
 
-### Step 3 — 관찰 화면
+창 **resizable**. 스트레치 `canvas_items` + `expand`. ([D-002](../decisions/D-002-resolution-sprite-size.md))
 
-1. `Habitat` (`Control`, full rect) — 처음엔 `visible = false`
-2. 큰 `ColorRect` (사육장 관찰 영역)
-3. 그 안에 작은 색 박스 + Label `nerite_snail` (생물 자리)
-4. 하단 Label: `상태: 안정`
-5. 버튼 `대시보드로` / `편집`
+### 주요 파일
 
-성공: 큰 영역 + 생물 자리 + 상태가 보임.
-
-### Step 4 — 화면 전환
-
-루트에 스크립트를 붙입니다.
-
-```gdscript
-extends Control
-
-@onready var dashboard: Control = $Dashboard
-@onready var habitat: Control = $Habitat
-@onready var edit_screen: Control = $Edit
-
-func _ready() -> void:
-	_show_only(dashboard)
-
-func _show_only(screen: Control) -> void:
-	dashboard.visible = screen == dashboard
-	habitat.visible = screen == habitat
-	edit_screen.visible = screen == edit_screen
-
-func _on_to_habitat_pressed() -> void:
-	_show_only(habitat)
-
-func _on_to_dashboard_pressed() -> void:
-	_show_only(dashboard)
-
-func _on_to_edit_pressed() -> void:
-	_show_only(edit_screen)
-```
-
-버튼 Signal → 위 함수에 연결 (노드 선택 → Node 탭 → pressed).
-
-성공: 버튼으로 대시보드 ↔ 관찰이 바뀜.
-
-### Step 5 — 편집 화면 (격자)
-
-[`../ui/layout.md`](../ui/layout.md) **UI-04** 요약.
-
-1. `Edit` (`Control`, 처음 `visible = false`)
-2. 작은 `ColorRect`를 격자로 여러 개 (논리 격자 느낌, [D-003](../decisions/D-003-placement-model.md))
-3. Label `편집 — 격자 표시`
-4. 버튼 `관찰로 돌아가기`
-
-성공: 격자 칸이 보이고 관찰 화면으로 돌아올 수 있음.
-
-### Step 6 (선택) — 색 생물 살짝 움직이기
-
-관찰 화면의 생물 `ColorRect`에 스크립트:
-
-```gdscript
-extends ColorRect
-
-func _process(delta: float) -> void:
-	var dir := Vector2.ZERO
-	if Input.is_action_pressed("ui_left"):
-		dir.x -= 1
-	if Input.is_action_pressed("ui_right"):
-		dir.x += 1
-	if Input.is_action_pressed("ui_up"):
-		dir.y -= 1
-	if Input.is_action_pressed("ui_down"):
-		dir.y += 1
-	position += dir * 120.0 * delta
-```
-
-성공: 관찰 화면에서 화살표 키로 색 박스가 움직임. (나중에 `Walk` 애니로 교체)
+| 파일 | 역할 |
+|---|---|
+| `scenes/ui/main_wireframe.gd` | 크롬·레이아웃·팔레트 표시 |
+| `scenes/ui/habitat_stage.gd` | 논리 격자·페인트·배치 |
+| `scenes/ui/edit_palette.gd` | 지형 / 식물·이끼 / 동물 |
+| `scenes/ui/wire_actor.gd` | 관찰 시 배회 |
+| `scenes/ui/wire_box.gd` | 재사용 외곽선 |
 
 ## 6. 다음에 할 일
 
 1. Figma 와이어 — [`../design/figma-plan.md`](../design/figma-plan.md), [`../ui/flow.md`](../ui/flow.md)
 2. 기술 스파이크 — [`../roadmap/development-order.md`](../roadmap/development-order.md) Phase 2
-3. 그림판 → 도트 — [`../art/pixel-art-pipeline.md`](../art/pixel-art-pipeline.md), `skills/glass-wild-sprite-maker`
+3. 와이어 → 도트 — [`../art/pixel-art-pipeline.md`](../art/pixel-art-pipeline.md), `skills/glass-wild-sprite-maker`
 
 ## 7. 공식 문서 (보조)
 
-에디터 조작이 낯설면: [Godot Step by Step](https://docs.godotengine.org/en/stable/getting_started/step_by_step/index.html)  
-장르는 달라도 **씬·시그널·F5** 감각을 익히는 용도입니다.
+에디터 조작이 낯설면: [Godot Step by Step](https://docs.godotengine.org/en/stable/getting_started/step_by_step/index.html)

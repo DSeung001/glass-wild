@@ -1,201 +1,209 @@
 extends Control
-## Glass Wild learning wireframe: Dashboard / Habitat / Edit with ColorRect placeholders.
+## B/W wireframe: observe / edit, size presets, edit palette (D-010).
 ## See docs/guides/godot-beginner.md
 
-const CreatureScript := preload("res://scenes/ui/creature_placeholder.gd")
+const HabitatStageScript := preload("res://scenes/ui/habitat_stage.gd")
+const EditPaletteScript := preload("res://scenes/ui/edit_palette.gd")
 
-var dashboard: Control
-var habitat: Control
-var edit_screen: Control
+const PRESETS: Array[Dictionary] = [
+	{"label": "30×30×45cm", "w": 30, "d": 30, "h": 45},
+	{"label": "45×45×45cm", "w": 45, "d": 45, "h": 45},
+	{"label": "60×45×45cm", "w": 60, "d": 45, "h": 45},
+	{"label": "60×45×60cm", "w": 60, "d": 45, "h": 60},
+	{"label": "90×45×60cm", "w": 90, "d": 45, "h": 60},
+	{"label": "120×60×60cm", "w": 120, "d": 60, "h": 60},
+]
+
+const DEFAULT_PRESET_INDEX := 2
+
+var _status_label: Label
+var _depth_label: Label
+var _mode_button: Button
+var _size_option: OptionButton
+var _aspect: AspectRatioContainer
+var _stage: Control
+var _palette: Control
+var _palette_wrap: Control
+var _is_edit: bool = false
 
 
 func _ready() -> void:
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_build_ui()
-	_show_only(dashboard)
-
-
-func _show_only(screen: Control) -> void:
-	dashboard.visible = screen == dashboard
-	habitat.visible = screen == habitat
-	edit_screen.visible = screen == edit_screen
-
-
-func _on_to_habitat_pressed() -> void:
-	_show_only(habitat)
-
-
-func _on_to_dashboard_pressed() -> void:
-	_show_only(dashboard)
-
-
-func _on_to_edit_pressed() -> void:
-	_show_only(edit_screen)
+	_apply_preset(DEFAULT_PRESET_INDEX)
+	_set_edit_mode(false)
 
 
 func _build_ui() -> void:
 	var bg := ColorRect.new()
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	bg.color = Color(0.12, 0.13, 0.15)
+	bg.color = Color.BLACK
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
-	dashboard = _build_dashboard()
-	habitat = _build_habitat()
-	edit_screen = _build_edit()
-	add_child(dashboard)
-	add_child(habitat)
-	add_child(edit_screen)
-
-
-func _build_dashboard() -> Control:
-	var root := Control.new()
-	root.name = "Dashboard"
+	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.add_theme_constant_override("separation", 12)
+	add_child(root)
 
-	var title := _label("사육장 대시보드", 28)
-	title.position = Vector2(64, 48)
-	root.add_child(title)
+	var margin_top := MarginContainer.new()
+	margin_top.add_theme_constant_override("margin_left", 24)
+	margin_top.add_theme_constant_override("margin_right", 24)
+	margin_top.add_theme_constant_override("margin_top", 16)
+	root.add_child(margin_top)
 
-	var subtitle := _label("UI-02 · 색 박스로 사육장 카드 자리만 잡음", 16)
-	subtitle.position = Vector2(64, 96)
-	subtitle.modulate = Color(0.75, 0.78, 0.82)
-	root.add_child(subtitle)
+	var chrome := HBoxContainer.new()
+	chrome.add_theme_constant_override("separation", 16)
+	margin_top.add_child(chrome)
 
-	var cards := [
-		{"name": "사육장 1", "status": "안정", "color": Color(0.28, 0.45, 0.32)},
-		{"name": "사육장 2", "status": "주의", "color": Color(0.45, 0.38, 0.22)},
-		{"name": "사육장 3", "status": "정보", "color": Color(0.25, 0.35, 0.48)},
-	]
-	for i in cards.size():
-		var card := _card(cards[i]["name"], cards[i]["status"], cards[i]["color"])
-		card.position = Vector2(64 + i * 420, 180)
-		root.add_child(card)
+	chrome.add_child(_wire_label("Glass Wild — 와이어프레임", 22))
+	chrome.add_child(_spacer())
+	chrome.add_child(_wire_label("사육장 규격", 14))
 
-	var btn := _button("관찰하기", Vector2(64, 520), Vector2(220, 56))
-	btn.pressed.connect(_on_to_habitat_pressed)
-	root.add_child(btn)
-	return root
+	_size_option = OptionButton.new()
+	_size_option.custom_minimum_size = Vector2(180, 36)
+	for i in PRESETS.size():
+		_size_option.add_item(PRESETS[i]["label"], i)
+	_size_option.select(DEFAULT_PRESET_INDEX)
+	_size_option.item_selected.connect(_on_size_selected)
+	_style_option(_size_option)
+	chrome.add_child(_size_option)
 
+	_mode_button = Button.new()
+	_mode_button.custom_minimum_size = Vector2(120, 36)
+	_mode_button.pressed.connect(_on_mode_pressed)
+	_style_button(_mode_button)
+	chrome.add_child(_mode_button)
 
-func _build_habitat() -> Control:
-	var root := Control.new()
-	root.name = "Habitat"
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.visible = false
+	var body := HBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 16)
+	root.add_child(body)
 
-	var title := _label("사육장 관찰", 28)
-	title.position = Vector2(64, 40)
-	root.add_child(title)
+	var stage_margin := MarginContainer.new()
+	stage_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	stage_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	stage_margin.add_theme_constant_override("margin_left", 48)
+	stage_margin.add_theme_constant_override("margin_bottom", 8)
+	body.add_child(stage_margin)
 
-	var view := ColorRect.new()
-	view.position = Vector2(64, 100)
-	view.size = Vector2(1400, 720)
-	view.color = Color(0.18, 0.28, 0.22)
-	root.add_child(view)
+	_aspect = AspectRatioContainer.new()
+	_aspect.alignment_horizontal = AspectRatioContainer.ALIGNMENT_CENTER
+	_aspect.alignment_vertical = AspectRatioContainer.ALIGNMENT_CENTER
+	_aspect.stretch_mode = AspectRatioContainer.STRETCH_FIT
+	_aspect.custom_minimum_size = Vector2(320, 240)
+	_aspect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_aspect.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	stage_margin.add_child(_aspect)
 
-	var water := ColorRect.new()
-	water.position = Vector2(64, 100 + 480)
-	water.size = Vector2(1400, 240)
-	water.color = Color(0.15, 0.28, 0.42, 0.85)
-	root.add_child(water)
-	var water_label := _label("수역 (placeholder)", 14)
-	water_label.position = Vector2(80, 100 + 500)
-	root.add_child(water_label)
+	_stage = Control.new()
+	_stage.set_script(HabitatStageScript)
+	_stage.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_aspect.add_child(_stage)
 
-	var creature := ColorRect.new()
-	creature.position = Vector2(280, 420)
-	creature.size = Vector2(64, 48)
-	creature.color = Color(0.85, 0.75, 0.35)
-	creature.set_script(CreatureScript)
-	root.add_child(creature)
+	_palette_wrap = MarginContainer.new()
+	_palette_wrap.visible = false
+	_palette_wrap.add_theme_constant_override("margin_right", 24)
+	_palette_wrap.add_theme_constant_override("margin_top", 8)
+	_palette_wrap.add_theme_constant_override("margin_bottom", 8)
+	body.add_child(_palette_wrap)
 
-	var creature_label := _label("nerite_snail", 14)
-	creature_label.position = Vector2(270, 475)
-	root.add_child(creature_label)
+	_palette = VBoxContainer.new()
+	_palette.set_script(EditPaletteScript)
+	_palette_wrap.add_child(_palette)
+	_palette.call("setup", Callable(self, "_style_button"))
+	_palette.tool_selected.connect(_on_tool_selected)
 
-	var status := _label("상태: 안정", 20)
-	status.position = Vector2(64, 850)
-	root.add_child(status)
+	var footer := MarginContainer.new()
+	footer.add_theme_constant_override("margin_left", 24)
+	footer.add_theme_constant_override("margin_right", 24)
+	footer.add_theme_constant_override("margin_bottom", 20)
+	root.add_child(footer)
 
-	var hint := _label("화살표 키로 색 박스(생물 자리) 이동 · Step 6", 14)
-	hint.position = Vector2(64, 890)
-	hint.modulate = Color(0.7, 0.72, 0.76)
-	root.add_child(hint)
-
-	var to_dash := _button("대시보드로", Vector2(1520, 100), Vector2(280, 52))
-	to_dash.pressed.connect(_on_to_dashboard_pressed)
-	root.add_child(to_dash)
-
-	var to_edit := _button("편집", Vector2(1520, 168), Vector2(280, 52))
-	to_edit.pressed.connect(_on_to_edit_pressed)
-	root.add_child(to_edit)
-	return root
-
-
-func _build_edit() -> Control:
-	var root := Control.new()
-	root.name = "Edit"
-	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.visible = false
-
-	var title := _label("편집 — 격자 표시", 28)
-	title.position = Vector2(64, 40)
-	root.add_child(title)
-
-	var note := _label("UI-04 · D-003 논리 격자 느낌 (도트/타일맵 아님)", 16)
-	note.position = Vector2(64, 88)
-	note.modulate = Color(0.75, 0.78, 0.82)
-	root.add_child(note)
-
-	var cols := 12
-	var rows := 8
-	var cell := 72
-	var origin := Vector2(64, 140)
-	for y in rows:
-		for x in cols:
-			var rect := ColorRect.new()
-			rect.position = origin + Vector2(x * (cell + 4), y * (cell + 4))
-			rect.size = Vector2(cell, cell)
-			var shade := 0.22 + ((x + y) % 2) * 0.04
-			rect.color = Color(shade, shade + 0.02, shade + 0.04)
-			root.add_child(rect)
-
-	var back := _button("관찰로 돌아가기", Vector2(64, 820), Vector2(280, 56))
-	back.pressed.connect(_on_to_habitat_pressed)
-	root.add_child(back)
-	return root
+	var footer_row := HBoxContainer.new()
+	footer.add_child(footer_row)
+	_status_label = _wire_label("상태: 안정", 18)
+	footer_row.add_child(_status_label)
+	footer_row.add_child(_spacer())
+	_depth_label = _wire_label("", 14)
+	footer_row.add_child(_depth_label)
 
 
-func _card(card_name: String, status: String, color: Color) -> ColorRect:
-	var card := ColorRect.new()
-	card.size = Vector2(380, 260)
-	card.color = color
-
-	var name_label := _label(card_name, 22)
-	name_label.position = Vector2(24, 24)
-	card.add_child(name_label)
-
-	var status_label := _label("상태: %s" % status, 18)
-	status_label.position = Vector2(24, 80)
-	card.add_child(status_label)
-
-	var hint := _label("미리보기 자리", 14)
-	hint.position = Vector2(24, 180)
-	hint.modulate = Color(1, 1, 1, 0.7)
-	card.add_child(hint)
-	return card
+func _on_size_selected(index: int) -> void:
+	_apply_preset(index)
 
 
-func _label(text: String, font_size: int) -> Label:
+func _on_mode_pressed() -> void:
+	_set_edit_mode(not _is_edit)
+
+
+func _on_tool_selected(tool: Dictionary) -> void:
+	_stage.call("set_selected_tool", tool)
+
+
+func _apply_preset(index: int) -> void:
+	var p: Dictionary = PRESETS[index]
+	_stage.call("set_preset", p["w"], p["d"], p["h"])
+	_aspect.ratio = float(p["w"]) / float(p["h"])
+	var cols := int(round(float(p["w"]) / 0.5))
+	var rows := int(round(float(p["h"]) / 0.5))
+	_depth_label.text = "깊이 %dcm · 논리 셀 %d×%d (0.5cm)" % [p["d"], cols, rows]
+
+
+func _set_edit_mode(edit: bool) -> void:
+	_is_edit = edit
+	_stage.call("set_edit_mode", edit)
+	_palette_wrap.visible = edit
+	if edit:
+		_mode_button.text = "관찰로"
+		_status_label.text = "편집 · 논리 셀 0.5cm"
+	else:
+		_mode_button.text = "편집"
+		_status_label.text = "상태: 안정"
+
+
+func _wire_label(text: String, font_size: int) -> Label:
 	var label := Label.new()
 	label.text = text
 	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", Color.WHITE)
 	return label
 
 
-func _button(text: String, pos: Vector2, size: Vector2) -> Button:
-	var btn := Button.new()
-	btn.text = text
-	btn.position = pos
-	btn.size = size
-	return btn
+func _spacer() -> Control:
+	var s := Control.new()
+	s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return s
+
+
+func _style_button(btn: Button) -> void:
+	btn.add_theme_color_override("font_color", Color.WHITE)
+	btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	btn.add_theme_color_override("font_pressed_color", Color.BLACK)
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color.BLACK
+	normal.set_border_width_all(1)
+	normal.border_color = Color.WHITE
+	normal.set_content_margin_all(8)
+	btn.add_theme_stylebox_override("normal", normal)
+	var hover := normal.duplicate()
+	hover.bg_color = Color(0.15, 0.15, 0.15)
+	btn.add_theme_stylebox_override("hover", hover)
+	var pressed := normal.duplicate()
+	pressed.bg_color = Color.WHITE
+	btn.add_theme_stylebox_override("pressed", pressed)
+
+
+func _style_option(opt: OptionButton) -> void:
+	opt.add_theme_color_override("font_color", Color.WHITE)
+	opt.add_theme_color_override("font_hover_color", Color.WHITE)
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color.BLACK
+	box.set_border_width_all(1)
+	box.border_color = Color.WHITE
+	box.set_content_margin_all(8)
+	opt.add_theme_stylebox_override("normal", box)
+	opt.add_theme_stylebox_override("hover", box)
+	opt.add_theme_stylebox_override("pressed", box)
+	opt.add_theme_stylebox_override("focus", box)
