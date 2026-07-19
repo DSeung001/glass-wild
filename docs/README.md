@@ -72,7 +72,7 @@
 - [`decisions/D-004-creature-naming-realism.md`](decisions/D-004-creature-naming-realism.md): 현실성 수준과 가상 이름
 - [`decisions/D-005-failure-death.md`](decisions/D-005-failure-death.md): 사망, 부상과 병원 회복
 - [`decisions/D-006-wallpaper-interaction.md`](decisions/D-006-wallpaper-interaction.md): 배경화면 입력과 알림
-- [`decisions/D-007-mvp-content-count.md`](decisions/D-007-mvp-content-count.md): MVP 열대 팔루다리움 콘텐츠
+- [`decisions/D-007-mvp-content-count.md`](decisions/D-007-mvp-content-count.md): MVP 첫 축 예시(열대 팔루다리움), 동물군 확장 가능
 - [`decisions/D-008-figma-exit-criteria.md`](decisions/D-008-figma-exit-criteria.md): Figma 완료와 Godot 진입 기준
 
 ## 주요 용어

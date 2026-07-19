@@ -11,21 +11,22 @@
 - 도트 프레임은 6~12 FPS 범위에서 재생합니다.
 - 긴 이미지 크로스페이드보다 짧은 전환 클립을 사용합니다.
 - 상태 변화는 행동의 시작과 종료가 보이도록 설계합니다.
+- 육상 이동 표시명은 Walk, 파일명·SpriteFrames 키는 `walk`입니다.
 
 ## 권장 상태 구조
 
 ```text
 Idle
-→ IdleToMove
-→ Move
-→ MoveToIdle
+→ IdleToWalk
+→ Walk
+→ WalkToIdle
 → Idle
 ```
 
 먹이 행동 예시:
 
 ```text
-Move
+Walk
 → ApproachFood
 → EatStart
 → EatLoop
@@ -50,11 +51,12 @@ Idle
 | 애니메이션 | 권장 프레임 | 반복 | MVP 우선도 |
 |---|---:|---|---|
 | Idle | 4~6 | 반복 | 필수 |
-| Move | 6~8 | 반복 | 필수 |
+| Walk | 6~8 | 반복 | 필수 (파일명 `walk`) |
 | Eat | 4~6 | 반복 또는 1회 | 필수 |
 | Hide | 3~5 | 1회 | 생물별 |
 | Sleep | 2~4 | 반복 | 선택 |
-| Avoid/Flee | Move 재사용 가능 | 반복 | 관계 검증 |
+| Notice | 2~4 | 1회 | 포식자·경계 |
+| Avoid/Flee | Walk 재사용 가능 | 반복 | 관계 검증 |
 | Chase | 6~8 | 반복 | 포식자 필수 |
 | Attack | 4~6 | 1회 | 포식자 필수 |
 | Hit | 2~3 | 1회 | 사고 검증 |
@@ -64,12 +66,12 @@ Idle
 
 | 생물 | 애니메이션 |
 |---|---|
-| 달팽이형 | Idle, Move, Eat, Hide |
-| 등각류형 | Idle, Move, Eat, Avoid |
-| 귀뚜라미형 | Idle, Move, Eat, Flee |
-| 사마귀형 | Idle, Move, Notice, Chase, Attack |
+| 달팽이형 | Idle, Walk, Eat, Hide |
+| 등각류형 | Idle, Walk, Eat, Avoid |
+| 귀뚜라미형 | Idle, Walk, Eat, Flee |
+| 사마귀형 | Idle, Walk, Notice, Chase, Attack |
 | 개구리형 | Idle, Hop, Eat, Hide |
-| 도마뱀형 | Idle, Move, Rest, Chase |
+| 도마뱀형 | Idle, Walk, Rest, Chase |
 
 세로형 프로토타입에서는 달팽이형과 등각류형만 먼저 완성합니다.
 
@@ -84,7 +86,7 @@ Idle
 ### 이동 종료
 
 - 목적지 도착 전에 이동 속도를 줄입니다.
-- MoveToIdle 프레임으로 자세를 안정화합니다.
+- WalkToIdle 프레임으로 자세를 안정화합니다.
 - 루프 프레임 중간에서 갑자기 멈추지 않습니다.
 
 ### 방향 전환
@@ -98,7 +100,7 @@ Idle
 긴급 이동이나 위험 회피로 현재 행동이 취소될 수 있습니다.
 
 - EatLoop → Alert → Flee
-- Sleep → Wake → Move
+- Sleep → Wake → Walk
 - Chase → LoseTarget → Idle
 
 모든 상태는 최소 하나의 안전한 종료 경로를 가져야 합니다.

@@ -58,7 +58,7 @@
 | 등각류형 | Idle, Walk, Eat, Avoid |
 | 달팽이형 | Idle, Walk, Eat, Hide |
 | 귀뚜라미형 | Idle, Walk, Eat, Flee |
-| 사마귀형 | Idle, Walk, Chase, Attack |
+| 사마귀형 | Idle, Walk, Notice, Chase, Attack |
 | 개구리형 | Idle, Hop, Eat, Hide |
 | 도마뱀형 | Idle, Walk, Rest, Chase |
 
