@@ -24,11 +24,18 @@ assets/
     creatures/
     plants/
     items/
+      floors/
+      walls/
+      water/
+      moss/
+      structures/
+      equipment/
+      food/
   palettes/
   references/
 ```
 
-기획 단계에서는 실제 에셋 파일을 넣지 않고 규칙만 유지합니다.
+기획 단계에서는 실제 에셋 파일을 넣지 않고 규칙만 유지합니다. 바닥·벽지·수역은 `docs/core/habitat-surfaces.md`(D-009)를 따릅니다.
 
 ## 스타일 가이드 항목
 
@@ -134,6 +141,23 @@ humid_snail_eat_right_01.png
 humid_snail_sprite_sheet.png
 humid_snail_sprite_sheet.json
 ```
+
+바닥·벽지·수역 타일:
+
+```text
+{surface_id}_{zone}_{tile_role}_{variant}.png
+```
+
+예시:
+
+```text
+substrate_moist_air_center_01.png
+wall_cork_air_center_01.png
+wall_aquatic_rock_water_center_01.png
+water_body_surface_flow_01.png
+```
+
+`zone`은 `air` 또는 `water`입니다.
 
 ## 프롬프트 기본 템플릿
 

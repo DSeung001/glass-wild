@@ -26,6 +26,7 @@
 - [`core/concept.md`](core/concept.md): 게임 정체성, 설계 원칙, 범위
 - [`core/loop.md`](core/loop.md): 일반 플레이와 배경화면 모드의 핵심 루프
 - [`core/systems.md`](core/systems.md): 환경, 공간, 관계, 시간, 경고, 복구 시스템
+- [`core/habitat-surfaces.md`](core/habitat-surfaces.md): 바닥·벽지·수역 레이어와 식재 면
 
 ### 엔티티
 
@@ -74,6 +75,7 @@
 - [`decisions/D-006-wallpaper-interaction.md`](decisions/D-006-wallpaper-interaction.md): 배경화면 입력과 알림
 - [`decisions/D-007-mvp-content-count.md`](decisions/D-007-mvp-content-count.md): MVP 첫 축 예시(열대 팔루다리움), 동물군 확장 가능
 - [`decisions/D-008-figma-exit-criteria.md`](decisions/D-008-figma-exit-criteria.md): Figma 완료와 Godot 진입 기준
+- [`decisions/D-009-habitat-surfaces-water.md`](decisions/D-009-habitat-surfaces-water.md): 바닥·벽지·수역, 수중 식재, 유체 물리 MVP 제외
 
 ## 주요 용어
 
@@ -85,6 +87,8 @@
 | 전체 안정도 | 사육장 내부 생물 상태와 위험 요소를 종합한 대표 점수 |
 | 합사 판정 | 둘 이상의 생물을 같은 사육장에 둘 때 발생할 위험을 평가하는 절차 |
 | 활동 구역 | 바닥, 식물, 벽면, 수중 등 생물이 주로 사용하는 공간 |
+| 벽지 | 사육장 뒷벽·배경면(`wall_face`). 데스크톱 배경화면과 구분 |
+| 수역 | 논리 격자의 물 셀 집합. 물고기 유영 공간 |
 | 배경화면 모드 | UI를 최소화하고 도트 애니메이션 중심으로 생태계를 관찰하는 실행 모드 |
 | 긴급 상태 | 즉시 조치하지 않으면 부상 또는 심각한 환경 문제가 발생하는 상태 |
 | 세로형 프로토타입 | 적은 콘텐츠로 전체 플레이 흐름을 끝까지 구현한 검증 빌드 |
@@ -104,12 +108,13 @@
 | MVP 사망 없음, 부상·격리·병원 회복 | 확정 (D-005) |
 | 현실 참고 + 가상 이름, 게임적 과장 | 확정 (D-004) |
 | 논리 격자 + 블록형 편집 | 확정 (D-003) |
+| 바닥·벽지·수역 레이어, 수중 식재 | 확정 (D-009), 유체 물리 MVP 제외 |
 | 오프라인 진행 | MVP 제외 |
 | 번식과 유전 | MVP 제외 |
 
 ## 현재 작업 순서
 
-의사결정(D-001~D-008)은 확정되었습니다.
+의사결정(D-001~D-009)은 확정되었습니다.
 
 1. Figma Foundations와 핵심 와이어프레임 작성
 2. 배경화면·도트 애니메이션 기술 스파이크

@@ -26,8 +26,9 @@ description: Glass Wild 프로젝트에 맞는 Godot용 도트 스프라이트, 
 
 - `docs/...` 경로를 열라고 하거나, 문서를 못 읽었다고 작업을 멈추지 않는다.
 - “문서 확인 후…”, “저장소의 ○○를 보라” 같은 저장소 전제 문구를 출력하지 않는다.
-- D-002·D-003·D-004·D-007에 해당하는 내용은 본문에 이미 내장되어 있다. Pending처럼 취급하지 않는다.
+- D-002·D-003·D-004·D-007·D-009에 해당하는 내용은 본문에 이미 내장되어 있다. Pending처럼 취급하지 않는다.
 - D-007 팔루다리움 목록은 MVP **첫 콘텐츠 축·예시**이지 닫힌 로스터가 아니다. 목록 밖·다른 기후·역할군은 본문의 확장 규칙으로 제작하고 `content_axis: paludarium_mvp | extension`을 표시한다.
+- **벽지**는 사육장 뒷벽(`wall_face`)이며 D-006 데스크톱 배경화면과 다르다. 수역은 논리 수체이며 물고기가 `Swim`으로 유영한다. Godot 유체 물리는 쓰지 않는다.
 
 ### Cursor / 저장소 docs 읽기 가능
 
@@ -36,7 +37,8 @@ description: Glass Wild 프로젝트에 맞는 Godot용 도트 스프라이트, 
 1. `docs/decisions/` — `Decided`만 확정값
 2. `docs/art/pixel-art-pipeline.md`, `docs/art/animation-guide.md`
 3. `docs/mvp/vertical-slice.md`, `docs/mvp/scope.md`
-4. `docs/entities/` — 역할군·확장 후보 (D-007은 첫 축 예시, 목록 밖 거부 금지)
+4. `docs/core/habitat-surfaces.md` — 바닥·벽지·수역
+5. `docs/entities/` — 역할군·확장 후보 (D-007은 첫 축 예시, 목록 밖 거부 금지)
 
 문서 상태가 `Pending`이면 확정값처럼 말하지 않고 `작업 가정`으로 표시한다. docs를 반영해 내장값과 다르게 작업하면 결과에 `docs 반영: …`을 한 줄로만 적는다.
 
@@ -99,12 +101,15 @@ description: Glass Wild 프로젝트에 맞는 Godot용 도트 스프라이트, 
 1. `creature`: 동물·역할군. 기본 예시는 D-007 팔루다리움 목록이며, 귀뚜라미형·사마귀형·도마뱀형 등 확장 동물군도 허용
 2. `plant`: 식물·역할군. 기본 예시는 D-007 식물이며, 습도·덮개·등반·건조·식용 등 역할 확장 허용
 3. `structure`: 은신처, 나뭇가지, 돌 구조물
-4. `equipment`: 히터, 분무 장치, 환기 장치, 조명, 얕은 물 공간
+4. `equipment`: 히터, 분무 장치, 환기 장치, 조명
 5. `food`: 식물성 먹이, 과일·채소, 곤충 먹이, 사료
-6. `substrate_tile`: 습윤 바닥재, 모래, 낙엽층, 혼합 바닥재
-7. `moss_overlay`: 바닥이나 구조물 위에 겹치는 투명 이끼 (기본 예: 깃털이끼, 솔이끼, 비단이끼)
-8. `wall_tile`: 사육장 배경 벽면, 코르크, 암석면, 유리 가장자리
-9. `background`: 사육장 후면의 넓은 반복 또는 단일 배경
+6. `floor_tile`: 육상·수중 바닥 기질 타일 (`zone`: air | water)
+7. `wall_face`: 사육장 벽지(뒷벽) 베이스 (`zone`: air | water). 데스크톱 wallpaper 아님
+8. `wall_plant_overlay`: 벽지 위 흙 포켓·이끼·부착 식물 오버레이
+9. `moss_overlay`: 바닥 또는 벽 공용 투명 이끼 오버레이
+10. `water_body`: 수역 실루엣·수체 타일 (물고기 유영 공간)
+11. `water_fx`: 수면·흐름 도트 애니 (유체 물리 없음)
+12. `background`: 넓은 반복 배경이 필요할 때만 (보통 `wall_face`로 충분)
 
 자산 유형을 분류할 수 있으면 추가 질문 없이 기본값을 적용한다. 결과를 크게 바꾸는 정보가 완전히 누락된 경우에만 질문한다. 질문 대신 합리적인 작업 가정을 사용할 수 있으면 작업을 진행하고 가정을 명시한다.
 
@@ -125,10 +130,12 @@ description: Glass Wild 프로젝트에 맞는 Godot용 도트 스프라이트, 
 ### 1. 해석된 명세
 
 ```yaml
-asset_type: creature | plant | structure | equipment | food | substrate_tile | moss_overlay | wall_tile | background
+asset_type: creature | plant | structure | equipment | food | floor_tile | wall_face | wall_plant_overlay | moss_overlay | water_body | water_fx | background
 entity_id: snake_case_id
 # content_axis: creature·plant·moss_overlay만 필수. 그 외는 생략 또는 n/a
 content_axis: paludarium_mvp | extension | n/a
+# zone: floor_tile·wall_face·wall_plant_overlay·moss(면 부착)·water_* 에 사용
+zone: air | water | n/a
 purpose: static | animation | tile | overlay | reference
 view: side | near_side_3_4
 cell_size: 32x32 | 48x48 | 64x64
@@ -186,7 +193,9 @@ palette: limited
 | 다트프록 | `dart_frog` | small | 32 | ground | Idle, Hop, Eat, Hide |
 | 앤들러 구피 | `endler_guppy` | small | 32 | water | Idle, Swim, Eat, Flee |
 
-`cherry_shrimp`의 `Walk`는 **수중 기질·장식품 위를 걷는** 동작이다 (헤엄 `Swim`이 아님). 떠다니는 중층 포즈로 그리지 않는다. 파일명·키는 `walk`, `contact_mode`는 `water`(수중 환경)이되 발·몸이 기질에 닿는 실루엣을 유지한다. `endler_guppy`만 기본 이동이 `Swim`이다.
+`cherry_shrimp`의 `Walk`는 **수중 기질·장식품 위를 걷는** 동작이다 (헤엄 `Swim`이 아님). 떠다니는 중층 포즈로 그리지 않는다. 파일명·키는 `walk`, `contact_mode`는 `water`(수중 환경)이되 발·몸이 기질에 닿는 실루엣을 유지한다.
+
+`endler_guppy`는 **수역(`water_body`) 안에서 `Swim`으로 유영**한다. 중층 부유가 허용되며, 수역 밖 공중에 두지 않는다.
 
 세로형 프로토타입 요청에서는 `nerite_snail` → `isopod` 순으로 우선한다.
 
@@ -222,7 +231,32 @@ palette: limited
 | 솔이끼 | `pillow_moss` |
 | 비단이끼 | `silk_moss` |
 
-아이템(바닥재·구조물·장비·먹이) ID 예: `substrate_moist`, `substrate_sand`, `substrate_leaf`, `substrate_mixed`, `shelter_small`, `shelter_large`, `branch`, `rock`, `heater`, `mister`, `ventilation`, `light`, `shallow_water`, `food_plant`, `food_fruit`, `food_insect`, `food_feed`. ChatGPT에서는 이 목록만 사용한다. Cursor에서 docs를 읽을 수 있을 때만 items 문서로 보강한다.
+아이템 ID 예:
+
+- 육상 바닥: `substrate_moist`, `substrate_sand`, `substrate_leaf`, `substrate_mixed`
+- 수중 바닥: `substrate_aquatic_sand`, `substrate_aquatic_gravel`, `substrate_aquatic_soil`
+- 벽지: `wall_cork`, `wall_soil`, `wall_rock`, `wall_glass_edge`, `wall_aquatic_rock`, `wall_aquatic_plain`
+- 수역: `water_body`, `shallow_water`(얕은 수역 배치 형태)
+- 기타: `shelter_small`, `shelter_large`, `branch`, `rock`, `heater`, `mister`, `ventilation`, `light`, `food_plant`, `food_fruit`, `food_insect`, `food_feed`
+
+ChatGPT에서는 이 목록만 사용한다. Cursor에서 docs를 읽을 수 있을 때만 items·habitat-surfaces로 보강한다.
+
+## 바닥·벽지·수역 제작 규칙 (D-009)
+
+레이어(뒤→앞): 벽지 → 수역/공기 → 바닥 → 식재 오버레이 → 구조물·장비 → 생물.
+
+| 면 | zone | 식재 |
+|---|---|---|
+| 육상 바닥 | air | 이끼·바닥 식물 오버레이 |
+| 수중 바닥 | water | 수초·수중 이끼 |
+| 기상부 벽지 | air | 흙 포켓·이끼·등반 식물 |
+| 수중 벽지 | water | 수중 이끼·부착 식물 |
+
+- 벽지 베이스와 식재 오버레이는 **절대 한 장에 구워 넣지 않는다**
+- 수중 벽지·바닥은 채도·명도를 낮춰 전경 생물 가독성 유지
+- 수역(`water_body`): 불투명 픽셀 실루엣 + 짧은 흐름/`water_fx` 프레임. 반투명 안티앨리어싱 금지. 유체 물리 표현을 약속하지 않음
+- `shallow_water`는 얕은 `water_body` 배치로 해석
+- 타일 파일명: `{surface_id}_{zone}_{tile_role}_{variant}.png`
 
 ## 생물 스프라이트 제작 규칙
 
@@ -250,7 +284,7 @@ palette: limited
 | `water` + 기질 보행 | `cherry_shrimp` | `bottom_center` | 수중 기질 접점 (`ground_y`로 기록, 환경은 수중) |
 | `surface` | 수면·유리 면 이동이 주된 경우 | `bottom_center` 또는 부착면 | 명세에 명시 |
 
-- `endler_guppy`: 기본 `water`, 이동 애니 `Swim`, 피벗 `center` + `waterline_y`
+- `endler_guppy`: 기본 `water`, 이동 애니 `Swim`, 피벗 `center` + `waterline_y`. **수역 체적 안에서 유영**(중층 허용)
 - `cherry_shrimp`: 기본 `water`, 이동 애니 `Walk`(기질 위 보행), 피벗 `bottom_center` + 기질 접점. 중층 부유 포즈 금지
 - `nerite_snail`: 기본 `ground` (유리 등반은 요청 시에만 `surface`)
 - 종과 개체의 동일성
@@ -361,45 +395,42 @@ Idle → NoticeTarget → Approach → Chase → AttackWindup → Attack → Rec
 
 ## 바닥재 타일 제작 규칙
 
-바닥재는 탑다운 타일로 자동 해석하지 않는다. Glass Wild의 기본 시점에 맞춰 사육장 내부를 측면 또는 측면에 가까운 3/4 시점으로 보여주는 바닥 스트립 또는 논리 셀 타일로 설계한다.
+바닥재는 탑다운 타일로 자동 해석하지 않는다. zone(`air`/`water`)을 명세에 넣고, 측면 또는 측면에 가까운 3/4 시점의 바닥 스트립·논리 셀 타일로 설계한다.
 
-자산별 특징:
+육상:
 
-- `substrate_moist`: 어두운 습윤 흙, 작은 수분 반사, 부드러운 입자
-- `substrate_sand`: 밝고 건조한 입자, 습윤 표현 없음
-- `substrate_leaf`: 낙엽층이 겹쳐지고 작은 생물이 숨을 수 있는 틈
-- `substrate_mixed`: 흙, 작은 자갈, 유기물이 균형 있게 섞임
+- `substrate_moist`, `substrate_sand`, `substrate_leaf`, `substrate_mixed`
 
-기본 타일 세트:
+수중:
 
-- 중앙 반복 타일 3~4종
-- 왼쪽 가장자리
-- 오른쪽 가장자리
-- 위쪽 노출 경계
-- 오목·볼록 코너가 필요하면 별도 변형
-- 구조물과 식물이 자연스럽게 얹히도록 상단 접촉면을 일정하게 유지
+- `substrate_aquatic_sand`, `substrate_aquatic_gravel`, `substrate_aquatic_soil`
 
-타일은 이미지 안에 격자선과 여백을 넣지 않는다. 완성 후 정확한 셀 경계로 잘라 아틀라스를 구성한다.
+기본 타일 세트: 중앙 반복 3~4종, 좌·우 가장자리, 위쪽 노출 경계. 격자선·여백을 이미지에 넣지 않는다.
+
+## 벽지·식재 오버레이 제작 규칙
+
+- `wall_face`는 사육장 **뒷벽 베이스**다. 데스크톱 배경화면이 아니다
+- zone `air` / `water`를 파일명과 명세에 명시한다
+- `wall_plant_overlay`·이끼는 투명 배경 오버레이로 분리한다
+- 수중 벽지는 대비를 낮춘다
+- 등반·부착 지점을 과도하게 격자처럼 반복하지 않는다
+
+## 수역·물 이펙트 제작 규칙
+
+- `water_body`: 수체 실루엣, 수위 가장자리. 불투명 픽셀 우선
+- `water_fx`: 수면·흐름 2~6프레임. 유체 물리처럼 서술하지 않음
+- 유리 전면 프레임은 `wall_glass_edge` 등으로 분리
+- 물고기 스프라이트와 합성했을 때 실루엣이 읽혀야 함
 
 ## 이끼 오버레이 제작 규칙
 
-이끼는 바닥재와 합쳐진 불투명 타일이 아니라 별도 투명 오버레이를 기본으로 한다. 기본 예시는 D-007 이끼(`feather_moss`, `pillow_moss`, `silk_moss`)이며 다른 이끼 변형도 허용한다.
+이끼는 바닥재·벽지와 합쳐진 불투명 타일이 아니라 별도 투명 오버레이를 기본으로 한다. `zone`과 부착 면(`floor`/`wall`)을 명세에 적는다. 기본 예시는 D-007 이끼(`feather_moss`, `pillow_moss`, `silk_moss`)이며 다른 이끼 변형도 허용한다.
 
-- 투명 배경
-- 아래 바닥재가 보이도록 불규칙한 빈 공간 유지
-- 중앙, 가장자리, 코너, 작은 패치 변형 제공
-- 이끼 녹색이 식물 팔레트와 충돌하지 않도록 명도 차이를 둠
-- 타일 경계에서 덩어리가 갑자기 끊기지 않음
-- 반투명 안티앨리어싱 대신 완전 불투명 픽셀과 완전 투명 픽셀을 우선
-
-## 벽면·배경 제작 규칙
-
-- 측면 또는 약한 3/4 시점의 사육장 후면
-- 생물과 식물보다 대비를 낮춰 전경 가독성을 유지
-- 코르크, 흙벽, 암석면, 유리 가장자리 등 재질을 제한 팔레트로 단순화
-- 반복 배경은 좌우 연결이 자연스럽고 눈에 띄는 큰 랜드마크 반복을 피함
-- 등반 식물이나 벽면 생물을 위한 부착 지점을 지나치게 규칙적으로 만들지 않음
-- 배경 자체에 강한 그림자나 중심 조명을 넣지 않음
+- 투명 배경, 아래 면이 보이도록 불규칙한 빈 공간
+- 중앙·가장자리·코너·작은 패치 변형
+- 식물 팔레트와 명도 차이
+- 타일 경계에서 끊김 최소화
+- 완전 불투명/완전 투명 픽셀 우선 (반투명 AA 금지)
 
 ## 이미지 생성 프롬프트 구성
 
@@ -488,9 +519,10 @@ assets/
     creatures/
     plants/
     items/
-      substrates/
-      moss/
+      floors/
       walls/
+      water/
+      moss/
       structures/
       equipment/
       food/
@@ -534,15 +566,17 @@ isopod_eat_right_01.png
 타일·오버레이:
 
 ```text
-{material_id}_{tile_role}_{variant}.png
+{surface_id}_{zone}_{tile_role}_{variant}.png
 ```
 
 예:
 
 ```text
-substrate_moist_center_01.png
-feather_moss_edge_left_01.png
-wall_cork_center_01.png
+substrate_moist_air_center_01.png
+wall_cork_air_center_01.png
+wall_aquatic_rock_water_center_01.png
+feather_moss_air_edge_left_01.png
+water_body_surface_flow_01.png
 ```
 
 ### Godot 노드 매핑
@@ -551,7 +585,7 @@ wall_cork_center_01.png
 |---|---|
 | 생물 애니메이션 | `AnimatedSprite2D` + `SpriteFrames` |
 | 식물·구조물·장비·먹이 | `Sprite2D`, 상호작용 시 `Area2D` 추가 |
-| 바닥재·이끼·벽면 | `TileSet` + `TileMapLayer` |
+| 바닥재·벽지·수역·이끼 | `TileSet` + `TileMapLayer` (zone별 레이어 분리 권장) |
 | 움직이는 생물 | 상위 `CharacterBody2D` 또는 프로젝트 이동 노드 |
 
 ### 텍스처 설정
@@ -645,7 +679,8 @@ wall_cork_center_01.png
 - `등각류 먹는 모션 4프레임`
 - `습한 흙 바닥 타일 만들어줘`
 - `깃털이끼 오버레이 만들어줘`
-- `고습 사육장 벽지 필요해`
+- `수중 벽지(암석)랑 수역 타일 만들어줘`
+- `고습 사육장 육상 벽지 필요해`
 - `포토스 스프라이트 하나 생성해줘`
 - `이 이미지가 Glass Wild 스타일에 맞는지 검수해줘`
 
