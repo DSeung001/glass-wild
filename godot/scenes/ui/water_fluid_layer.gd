@@ -7,14 +7,24 @@ signal baked(terrain_water: Dictionary)
 const BAKE_INTERVAL := 0.1
 const KIND_WATER := "water"
 const KIND_WATER_HALF := "water_half"
-## Particle counts along cell axes when painting one cell (small blob).
+## Max particles along cell axes when the cell is large enough (edge-aligned, in-cell only).
 const INJECT_W := 2
 const INJECT_H := 2
-## Visual scale vs cell size (Fluid2DRenderer mesh).
-const MESH_SCALE_FRAC := 0.12
-## Full-cell bake if particle count >= this; half if >= HALF.
-const BAKE_FULL_COUNT := 3
+## Visual scale vs cell size (Fluid2DRenderer mesh); overlap softens the “dot cloud”.
+const MESH_SCALE_FRAC := 0.42
+## Full-cell bake if particle count >= this; half if >= HALF (spill / thin).
+const BAKE_FULL_COUNT := 1
 const BAKE_HALF_COUNT := 1
+## Must match StaticBody2D defaults so fluid ↔ tank walls collide.
+## Fluid2D defaults layer/mask to 0 (no solid contact) — that was the leak.
+const PHYSICS_LAYER := 1
+## Wall thickness ≥ ~2× particle radius (project: fluid_particle_radius_2d=5).
+const TANK_WALL_MIN_PX := 16.0
+## Water-like cohesion / damping (addon defaults are 1.0 / 1.0 — weak surface, thick goo).
+const SURFACE_TENSION := 25.0
+const SURFACE_BOUNDARY_ADHESION := 0.2
+const VISCOSITY_XSPH := 0.45
+const VISCOSITY_BOUNDARY_ADHESION := 0.15
 
 var _fluid: Fluid2D
 var _renderer: Fluid2DRenderer
@@ -25,7 +35,6 @@ var _cell_size: Vector2 = Vector2(10, 10)
 var _cols: int = 1
 var _rows: int = 1
 var _bake_accum: float = 0.0
-var _max_particles: int = 4000
 
 
 func _ready() -> void:
@@ -35,19 +44,24 @@ func _ready() -> void:
 
 	_bounds_body = StaticBody2D.new()
 	_bounds_body.name = "TankBounds"
+	_bounds_body.collision_layer = PHYSICS_LAYER
+	_bounds_body.collision_mask = PHYSICS_LAYER
 	add_child(_bounds_body)
 
 	_fluid = Fluid2D.new()
 	_fluid.name = "Fluid2D"
 	_fluid.density = 1000.0
 	_fluid.debug_draw = false
+	_fluid.collision_layer = PHYSICS_LAYER
+	_fluid.collision_mask = PHYSICS_LAYER
 	_try_add_fluid_effects(_fluid)
 	add_child(_fluid)
 
 	_renderer = Fluid2DRenderer.new()
 	_renderer.name = "Fluid2DRenderer"
 	_renderer.fluid = _fluid
-	_renderer.color = Color(0.22, 0.55, 0.78, 0.85)
+	# Lower alpha so overlapping radial meshes read as a sheet, not opaque beads.
+	_renderer.color = Color(0.16, 0.50, 0.78, 0.55)
 	_renderer.mesh_scale = Vector2(2.0, 2.0)
 	add_child(_renderer)
 
@@ -59,6 +73,7 @@ func _physics_process(delta: float) -> void:
 	if _bake_accum < BAKE_INTERVAL:
 		return
 	_bake_accum = 0.0
+	_cull_escaped_particles()
 	baked.emit(bake_water_cells())
 
 
@@ -77,11 +92,9 @@ func configure(cols: int, rows: int, cell_size: Vector2) -> void:
 
 
 func sync_solids(terrain: Dictionary) -> void:
-	for c in _solids_root.get_children():
-		c.queue_free()
+	_clear_children_immediate(_solids_root)
 	for key in terrain.keys():
-		var kind := String(terrain[key])
-		if kind != "floor" and kind != "wall":
+		if not _is_solid_cell(terrain[key]):
 			continue
 		var cell := _parse_key(String(key))
 		if cell.x < 0:
@@ -89,24 +102,28 @@ func sync_solids(terrain: Dictionary) -> void:
 		_add_solid_rect(_cell_rect(cell))
 
 
+## Solid if wall OR ground==floor. Water ground alone is not solid.
+## Supports layered Dictionary and legacy single-kind string.
+func _is_solid_cell(raw: Variant) -> bool:
+	if raw is Dictionary:
+		var layer: Dictionary = raw
+		if bool(layer.get("wall", false)):
+			return true
+		return String(layer.get("ground", "")) == "floor"
+	if raw is String:
+		var kind := String(raw)
+		return kind == "floor" or kind == "wall"
+	return false
+
+
 func inject_water_cell(cell: Vector2i) -> void:
 	if _fluid == null or not _in_grid(cell):
 		return
-	if _fluid.points.size() >= _max_particles:
+	# Edge-aligned in-cell grid (not create_rectangle_points): stays in one cell,
+	# but adjacent painted cells form a ~2×radius lattice so SPH can merge.
+	var shifted: PackedVector2Array = _points_in_cell(cell)
+	if shifted.is_empty():
 		return
-	var local_pts: PackedVector2Array = _fluid.create_rectangle_points(INJECT_W, INJECT_H)
-	if local_pts.is_empty():
-		local_pts = _fallback_cell_points()
-	# Center the small blob inside the painted cell.
-	var centroid := Vector2.ZERO
-	for p in local_pts:
-		centroid += p
-	centroid /= float(local_pts.size())
-	var center := Vector2(cell) * _cell_size + _cell_size * 0.5
-	var shifted := PackedVector2Array()
-	shifted.resize(local_pts.size())
-	for i in local_pts.size():
-		shifted[i] = local_pts[i] - centroid + center
 	var vels := PackedVector2Array()
 	vels.resize(shifted.size())
 	vels.fill(Vector2(0, 40))
@@ -174,30 +191,46 @@ func bake_water_cells() -> Dictionary:
 
 
 func _try_add_fluid_effects(fluid: Fluid2D) -> void:
-	var effects: Array = []
+	var effects: Array[Resource] = []
 	for cname in [
 		"FluidEffect2DSurfaceTensionAKINCI",
 		"FluidEffect2DViscosityXSPH",
 	]:
 		if ClassDB.class_exists(cname):
 			var e: Variant = ClassDB.instantiate(cname)
-			if e != null:
-				effects.append(e)
+			if e is Resource:
+				_configure_fluid_effect(e as Object, cname)
+				effects.append(e as Resource)
 	if not effects.is_empty():
-		fluid.set("effects", effects)
+		fluid.effects = effects
+
+
+func _configure_fluid_effect(effect: Object, cname: String) -> void:
+	if cname == "FluidEffect2DSurfaceTensionAKINCI":
+		_set_effect_prop(effect, "fluid_tension_coefficient", SURFACE_TENSION)
+		_set_effect_prop(effect, "boundary_adhesion_coefficient", SURFACE_BOUNDARY_ADHESION)
+	elif cname == "FluidEffect2DViscosityXSPH":
+		_set_effect_prop(effect, "fluid_viscosity_coefficient", VISCOSITY_XSPH)
+		_set_effect_prop(effect, "boundary_adhesion_coefficient", VISCOSITY_BOUNDARY_ADHESION)
+
+
+func _set_effect_prop(effect: Object, prop: String, value: Variant) -> void:
+	for p in effect.get_property_list():
+		if String(p.name) == prop:
+			effect.set(prop, value)
+			return
 
 
 func _rebuild_tank_bounds() -> void:
-	for c in _bounds_body.get_children():
-		c.queue_free()
+	_clear_children_immediate(_bounds_body)
 	var w := float(_cols) * _cell_size.x
 	var h := float(_rows) * _cell_size.y
-	var t := 8.0
-	# Bottom, top, left, right walls so fluid stays in the tank.
-	_add_bound_segment(Rect2(0, h, w, t))
-	_add_bound_segment(Rect2(0, -t, w, t))
-	_add_bound_segment(Rect2(-t, 0, t, h))
-	_add_bound_segment(Rect2(w, 0, t, h))
+	var t := maxf(TANK_WALL_MIN_PX, maxf(_cell_size.x, _cell_size.y) * 0.5)
+	# Overlap corners so particles cannot slip through seams.
+	_add_bound_segment(Rect2(-t, h, w + 2.0 * t, t))
+	_add_bound_segment(Rect2(-t, -t, w + 2.0 * t, t))
+	_add_bound_segment(Rect2(-t, -t, t, h + 2.0 * t))
+	_add_bound_segment(Rect2(w, -t, t, h + 2.0 * t))
 
 
 func _add_bound_segment(rect: Rect2) -> void:
@@ -211,6 +244,8 @@ func _add_bound_segment(rect: Rect2) -> void:
 
 func _add_solid_rect(rect: Rect2) -> void:
 	var body := StaticBody2D.new()
+	body.collision_layer = PHYSICS_LAYER
+	body.collision_mask = PHYSICS_LAYER
 	var shape := CollisionShape2D.new()
 	var box := RectangleShape2D.new()
 	box.size = rect.size
@@ -221,17 +256,66 @@ func _add_solid_rect(rect: Rect2) -> void:
 	_solids_root.add_child(body)
 
 
+func _clear_children_immediate(parent: Node) -> void:
+	## queue_free leaves a physics frame without walls; free now.
+	var kids := parent.get_children()
+	for c in kids:
+		parent.remove_child(c)
+		c.free()
+
+
+func _cull_escaped_particles() -> void:
+	if _fluid == null:
+		return
+	var pts: PackedVector2Array = _fluid.points
+	if pts.is_empty():
+		return
+	var w := float(_cols) * _cell_size.x
+	var h := float(_rows) * _cell_size.y
+	var pad := maxf(_cell_size.x, _cell_size.y)
+	var keep := PackedVector2Array()
+	for p in pts:
+		if p.x < -pad or p.y < -pad or p.x > w + pad or p.y > h + pad:
+			continue
+		keep.append(p)
+	if keep.size() != pts.size():
+		_fluid.points = keep
+
+
 func _cell_rect(cell: Vector2i) -> Rect2:
 	return Rect2(Vector2(cell) * _cell_size, _cell_size)
 
 
-func _fallback_cell_points() -> PackedVector2Array:
+## Particles stay inside the painted cell; 2×2 sits at ±radius from edges so
+## neighboring cells’ particles sit ~2×radius apart (continuous fluid body).
+func _points_in_cell(cell: Vector2i) -> PackedVector2Array:
+	var r: float = float(
+		ProjectSettings.get_setting("physics/rapier/fluid/fluid_particle_radius_2d", 5.0)
+	)
+	if r < 0.5:
+		r = 0.5
+	var origin := Vector2(cell) * _cell_size
+	var xs: PackedFloat32Array = _axis_sample_coords(_cell_size.x, r, INJECT_W)
+	var ys: PackedFloat32Array = _axis_sample_coords(_cell_size.y, r, INJECT_H)
 	var pts := PackedVector2Array()
-	var step := _cell_size * 0.25
-	for j in range(INJECT_H):
-		for i in range(INJECT_W):
-			pts.append(Vector2((i + 0.5) * step.x, (j + 0.5) * step.y))
+	pts.resize(xs.size() * ys.size())
+	var i := 0
+	for y in ys:
+		for x in xs:
+			pts[i] = origin + Vector2(x, y)
+			i += 1
 	return pts
+
+
+func _axis_sample_coords(cell_len: float, radius: float, max_n: int) -> PackedFloat32Array:
+	var out := PackedFloat32Array()
+	# Need room for an edge pair without centers leaving the cell.
+	if max_n >= 2 and cell_len >= radius * 2.5:
+		out.append(radius)
+		out.append(cell_len - radius)
+	else:
+		out.append(cell_len * 0.5)
+	return out
 
 
 func _in_grid(cell: Vector2i) -> bool:

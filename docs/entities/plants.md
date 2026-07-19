@@ -16,7 +16,7 @@
 | 조명 요구 | 부족, 적정, 강함 |
 | 바닥재 요구 | 허용 가능한 바닥재 태그 |
 | 공간 점유 | 배치와 밀도 판정 |
-| plant_surfaces | 설치 가능 면 목록: `floor_air` \| `floor_water` \| `wall_air` \| `wall_water` (이끼 포함, D-009·D-010) |
+| plant_surfaces / access | 설치 가능 면 태그 목록: `floor_air` \| `floor_water` \| `wall_air` \| `wall_water` (이끼 포함, D-009·D-010). 구현 필드명 `access` |
 | 환경 효과 | 습도·청결·은신처 등에 미치는 영향 |
 | 성장 크기 | 시야와 활동 구역 변화 |
 | 섭식 대상 여부 | 초식 생물이 먹을 수 있는지 |

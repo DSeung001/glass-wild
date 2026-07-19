@@ -9,7 +9,7 @@ KIND_WATER = "water"
 KIND_WATER_HALF = "water_half"
 FILL_FULL = 1.0
 FILL_HALF = 0.5
-BAKE_FULL_COUNT = 3
+BAKE_FULL_COUNT = 1
 BAKE_HALF_COUNT = 1
 
 
@@ -62,8 +62,9 @@ def test_kind_for_fill() -> None:
 
 
 def test_bake_thresholds() -> None:
-    baked = bake_from_counts({"0,0": 3, "1,0": 1, "2,0": 0})
-    assert baked == {"0,0": KIND_WATER, "1,0": KIND_WATER_HALF}
+    # 1 particle/cell inject: any particle in a cell bakes as full water.
+    baked = bake_from_counts({"0,0": 1, "1,0": 2, "2,0": 0})
+    assert baked == {"0,0": KIND_WATER, "1,0": KIND_WATER}
 
 
 def test_bake_skips_empty() -> None:

@@ -26,20 +26,22 @@
 | 포식 태그 | 목록 | 공격 가능한 대상 범주 |
 | 피식 태그 | 목록 | 위험한 포식자 범주 |
 | 행동 목록 | 목록 | 애니메이션과 상태 머신 기준 |
-| locomotion | 객체 | 접근 가능 면·수역 (아래). 배치·이동·애니 분기 기준 |
+| locomotion / access | 객체·목록 | 접근 가능 면·수역. 구현은 `access` 태그 배열 (+ 선택 `access_limits`). 배치·이동·애니 분기 기준 |
 
-### locomotion 필드
+### access 태그
 
-| 플래그 | 의미 |
+| 태그 | 의미 |
 |---|---|
-| `floor_air` | 기상부 바닥 보행 |
-| `wall_air` | 기상부 벽지 보행 |
-| `wall_air_max_cm_from_floor` | 바닥(사육장 하단)에서 위쪽 cm 한도. 생략·무제한이면 벽 전고 |
-| `floor_water` | 수중 기질 보행 |
-| `wall_water` | 수중 벽지 (수역에 접한 벽) |
+| `floor_air` | 기상부 바닥 보행·식재 |
+| `wall_air` | 기상부 벽지 |
+| `floor_water` | 수중 기질 / 수역 바닥 |
+| `wall_water` | 수역에 접한 벽 |
 | `swim` | 수역 셀 유영 |
 
+선택 `access_limits`: `{ "wall_air": 5 }`처럼 태그별 cm 한도. 생략·음수 = 무제한.  
 측면 뷰에서 「바닥 기준 Ncm」= 하단에서 위로 N논리 셀 (논리 셀 1cm, D-010).
+
+종은 태그를 **조합**한다. 예: 뉴트 `["floor_air","wall_air","floor_water","swim"]` + `access_limits.wall_air = 5`.
 
 ## 팔루다리움 첫 축 예시 (D-007) · 접근 영역
 
@@ -54,7 +56,7 @@
 | `springtail` | 스프링테일 | O | - | - | - | - | - | 초안 |
 | `dart_frog` | 다트프록 | O | O | 전고 | - | - | - | 초안 |
 
-면·zone에 따라 이동 애니(`walk` / `swim` 등)를 분기한다. 클립은 [`../art/animation-guide.md`](../art/animation-guide.md).
+면·zone에 따라 이동 애니(`walk` / `swim` 등)를 분기한다. 클립은 [`../art/animation-guide.md`](../art/animation-guide.md). 구현 필드: `access` (+ `access_limits`).
 
 ## MVP 역할군 6종
 

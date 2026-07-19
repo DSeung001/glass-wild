@@ -20,7 +20,7 @@
 - 앤들러 구피
 - 파이어밸리 뉴트
 
-종별 접근 영역(바닥·벽·수역)은 [`docs/entities/animals.md`](../entities/animals.md) locomotion 표를 따른다.
+종별 접근 영역(바닥·벽·수역)은 [`docs/entities/animals.md`](../entities/animals.md) access 태그 표를 따른다.
 
 식물 (첫 축 예시):
 

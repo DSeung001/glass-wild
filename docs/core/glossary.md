@@ -69,7 +69,7 @@
 | 전체 안정도 | tank stability | 사육장 대표 안정도 | |
 | 합사 판정 | compatibility check | 같은 사육장 다수 생물 위험 평가 | |
 | 활동 구역 | activity zone | 바닥·식물·벽면·수중 등 (플레이 태그) | |
-| locomotion | locomotion | 종이 **실제로 밟고 이동할 수 있는** 면·수역 플래그 (`floor_air` 등). 활동 구역보다 배치·이동 판정에 가깝다 | 활동 구역과 동일시 |
+| locomotion | locomotion / access | 종이 접근 가능한 면·수역 **태그 조합** (`floor_air`, `swim` 등). 선택 `access_limits`로 cm 한도. 활동 구역보다 배치·이동 판정에 가깝다 | 활동 구역과 동일시; bool 플래그 객체로만 기술 |
 | 표시 이름 | display name | UI에 보이는 이름. 내부 `id`와 분리 | ID를 그대로 UI에 노출 |
 | 부상·격리·병원 | injury / quarantine | MVP 실패·복구 (D-005), 사망 없음 | |
 

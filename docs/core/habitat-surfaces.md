@@ -25,6 +25,8 @@
 5. 구조물·장비
 6. 생물
 
+논리 셀은 `{ wall: bool, ground: ""|"floor"|"water"|"water_half" }` 로 둔다. 벽지(`wall`)는 바닥·수역과 겹칠 수 있고, `floor`와 수역(`water`/`water_half`)은 서로 덮어쓰며 공존하지 않는다. Fluid solid는 `wall` 또는 `ground==floor`일 때만 생성한다.
+
 가꾸기 시 격자는 D-003·D-010을 따르고(논리 셀 1cm, 표시 격자는 5cm마다·ON/OFF), 관찰·배경화면 모드에서는 격자를 숨깁니다.
 
 ## 논리 셀 태그

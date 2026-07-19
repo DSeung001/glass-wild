@@ -85,7 +85,7 @@ Idle
 | `floor_water` / `wall_water` | `walk` (수중 접점) | 새우·달팽이 등 |
 | `swim` | `swim` | 구피·뉴트 수역 등 |
 
-`locomotion` 플래그는 [`../entities/animals.md`](../entities/animals.md)를 따른다. 클립 세트 제작은 세로형·아트 파이프라인 이후.
+`access` 태그 조합은 [`../entities/animals.md`](../entities/animals.md)를 따른다. 클립 세트 제작은 세로형·아트 파이프라인 이후.
 
 ## 부드러운 연결 규칙
 

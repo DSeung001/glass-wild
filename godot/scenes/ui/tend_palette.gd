@@ -1,57 +1,17 @@
 extends VBoxContainer
-## Tend palette: terrain modes + tools (D-010). D-007 + locomotion.
+## Tend palette: terrain modes + tools (D-010). Access tags (D-009).
 
 signal tool_selected(tool: Dictionary)
 signal terrain_mode_selected(mode: String)
 
-const LOCO_LAND_CLIMB := {
-	"floor_air": true,
-	"wall_air": true,
-	"wall_air_max_cm_from_floor": -1,
-	"floor_water": false,
-	"wall_water": false,
-	"swim": false,
-}
-const LOCO_FLOOR_ONLY := {
-	"floor_air": true,
-	"wall_air": false,
-	"wall_air_max_cm_from_floor": -1,
-	"floor_water": false,
-	"wall_water": false,
-	"swim": false,
-}
-const LOCO_SWIM := {
-	"floor_air": false,
-	"wall_air": false,
-	"wall_air_max_cm_from_floor": -1,
-	"floor_water": false,
-	"wall_water": false,
-	"swim": true,
-}
-const LOCO_NEWT := {
-	"floor_air": true,
-	"wall_air": true,
-	"wall_air_max_cm_from_floor": 5,
-	"floor_water": true,
-	"wall_water": false,
-	"swim": true,
-}
-const LOCO_NERITE := {
-	"floor_air": false,
-	"wall_air": false,
-	"wall_air_max_cm_from_floor": -1,
-	"floor_water": true,
-	"wall_water": true,
-	"swim": false,
-}
-const LOCO_SHRIMP := {
-	"floor_air": false,
-	"wall_air": false,
-	"wall_air_max_cm_from_floor": -1,
-	"floor_water": true,
-	"wall_water": false,
-	"swim": true,
-}
+const ACCESS_LAND_CLIMB: Array[String] = ["floor_air", "wall_air"]
+const ACCESS_FLOOR_ONLY: Array[String] = ["floor_air"]
+const ACCESS_SWIM: Array[String] = ["swim"]
+const ACCESS_NEWT: Array[String] = ["floor_air", "wall_air", "floor_water", "swim"]
+const ACCESS_NERITE: Array[String] = ["floor_water", "wall_water"]
+const ACCESS_SHRIMP: Array[String] = ["floor_water", "swim"]
+const ACCESS_MOSS_FLOOR: Array[String] = ["floor_air", "floor_water"]
+const ACCESS_MOSS_WALL: Array[String] = ["wall_air", "wall_water"]
 
 ## Placeholder colors until pixel art (distinct per animal).
 const TOOLS: Array[Dictionary] = [
@@ -63,14 +23,14 @@ const TOOLS: Array[Dictionary] = [
 		"kind": "plant",
 		"id": "moss_floor",
 		"label": "이끼(바닥)",
-		"surfaces": ["floor_air", "floor_water"],
+		"access": ACCESS_MOSS_FLOOR,
 	},
 	{
 		"section": "식물·이끼",
 		"kind": "plant",
 		"id": "moss_wall",
 		"label": "이끼(벽지)",
-		"surfaces": ["wall_air", "wall_water"],
+		"access": ACCESS_MOSS_WALL,
 	},
 	{
 		"section": "동물",
@@ -79,7 +39,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "네리트 달팽이",
 		"label": "네리트 달팽이",
 		"color": Color(0.75, 0.78, 0.82),
-		"locomotion": LOCO_NERITE,
+		"access": ACCESS_NERITE,
 	},
 	{
 		"section": "동물",
@@ -88,7 +48,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "체리새우",
 		"label": "체리새우",
 		"color": Color(0.85, 0.28, 0.32),
-		"locomotion": LOCO_SHRIMP,
+		"access": ACCESS_SHRIMP,
 	},
 	{
 		"section": "동물",
@@ -97,7 +57,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "등각류",
 		"label": "등각류",
 		"color": Color(0.55, 0.48, 0.38),
-		"locomotion": LOCO_LAND_CLIMB,
+		"access": ACCESS_LAND_CLIMB,
 	},
 	{
 		"section": "동물",
@@ -106,7 +66,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "모어닝게코",
 		"label": "모어닝게코",
 		"color": Color(0.72, 0.62, 0.35),
-		"locomotion": LOCO_LAND_CLIMB,
+		"access": ACCESS_LAND_CLIMB,
 	},
 	{
 		"section": "동물",
@@ -115,7 +75,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "스프링테일",
 		"label": "스프링테일",
 		"color": Color(0.9, 0.9, 0.85),
-		"locomotion": LOCO_FLOOR_ONLY,
+		"access": ACCESS_FLOOR_ONLY,
 	},
 	{
 		"section": "동물",
@@ -124,7 +84,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "다트프록",
 		"label": "다트프록",
 		"color": Color(0.2, 0.55, 0.95),
-		"locomotion": LOCO_LAND_CLIMB,
+		"access": ACCESS_LAND_CLIMB,
 	},
 	{
 		"section": "동물",
@@ -133,7 +93,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "앤들러 구피",
 		"label": "앤들러 구피",
 		"color": Color(0.95, 0.55, 0.15),
-		"locomotion": LOCO_SWIM,
+		"access": ACCESS_SWIM,
 	},
 	{
 		"section": "동물",
@@ -142,7 +102,8 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "파이어밸리 뉴트",
 		"label": "파이어밸리 뉴트",
 		"color": Color(0.85, 0.35, 0.2),
-		"locomotion": LOCO_NEWT,
+		"access": ACCESS_NEWT,
+		"access_limits": {"wall_air": 5},
 	},
 ]
 
