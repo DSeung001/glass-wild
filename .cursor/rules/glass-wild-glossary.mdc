@@ -1,0 +1,10 @@
+---
+description: Glass Wild 고유 용어는 docs/core/glossary.md를 따른다
+alwaysApply: true
+---
+
+# Glass Wild 용어
+
+- 고유 용어·혼동어는 [`docs/core/glossary.md`](docs/core/glossary.md)를 따른다.
+- 문서·스킬·코드 작성 시 glossary **치환표**(쓰지 말 것 → 쓸 것)를 지킨다.
+- 벽지(`wall_face`) ≠ 배경화면(D-006). `Move` 폐기 → `Walk`/`walk`. 물 공간 → 수역.

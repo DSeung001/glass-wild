@@ -14,10 +14,11 @@
 ## 먼저 읽을 문서
 
 1. [`core/concept.md`](core/concept.md): 게임의 정체성과 설계 원칙
-2. [`roadmap/development-order.md`](roadmap/development-order.md): 디자인부터 MVP까지 개발 순서
-3. [`decisions/README.md`](decisions/README.md): 확정된 의사결정 목록
-4. [`design/figma-plan.md`](design/figma-plan.md): Figma 파일과 산출물 기준
-5. [`mvp/vertical-slice.md`](mvp/vertical-slice.md): 첫 번째 세로형 프로토타입
+2. [`core/glossary.md`](core/glossary.md): 고유 용어·치환표
+3. [`roadmap/development-order.md`](roadmap/development-order.md): 디자인부터 MVP까지 개발 순서
+4. [`decisions/README.md`](decisions/README.md): 확정된 의사결정 목록
+5. [`design/figma-plan.md`](design/figma-plan.md): Figma 파일과 산출물 기준
+6. [`mvp/vertical-slice.md`](mvp/vertical-slice.md): 첫 번째 세로형 프로토타입
 
 ## 문서 구조
 
@@ -27,6 +28,7 @@
 - [`core/loop.md`](core/loop.md): 일반 플레이와 배경화면 모드의 핵심 루프
 - [`core/systems.md`](core/systems.md): 환경, 공간, 관계, 시간, 경고, 복구 시스템
 - [`core/habitat-surfaces.md`](core/habitat-surfaces.md): 바닥·벽지·수역 레이어와 식재 면
+- [`core/glossary.md`](core/glossary.md): 고유 용어·치환표 (단일 기준)
 
 ### 엔티티
 
@@ -79,20 +81,15 @@
 
 ## 주요 용어
 
-| 용어 | 정의 |
+고유 용어·혼동어·치환표의 **단일 기준**은 [`core/glossary.md`](core/glossary.md)입니다.
+
+| 용어 | 한 줄 |
 |---|---|
-| 사육장 | 독립적인 환경 상태, 배치물과 생물을 가진 플레이 공간 |
-| 프리셋 | 고습·온대·건조 등 사육장 환경 설정 묶음 |
-| 환경 적합도 | 특정 생물이 현재 사육장 환경에 얼마나 적합한지 나타내는 0~100 점수 |
-| 전체 안정도 | 사육장 내부 생물 상태와 위험 요소를 종합한 대표 점수 |
-| 합사 판정 | 둘 이상의 생물을 같은 사육장에 둘 때 발생할 위험을 평가하는 절차 |
-| 활동 구역 | 바닥, 식물, 벽면, 수중 등 생물이 주로 사용하는 공간 |
-| 벽지 | 사육장 뒷벽·배경면(`wall_face`). 데스크톱 배경화면과 구분 |
-| 수역 | 논리 격자의 물 셀 집합. 물고기 유영 공간 |
-| 배경화면 모드 | UI를 최소화하고 도트 애니메이션 중심으로 생태계를 관찰하는 실행 모드 |
-| 긴급 상태 | 즉시 조치하지 않으면 부상 또는 심각한 환경 문제가 발생하는 상태 |
-| 세로형 프로토타입 | 적은 콘텐츠로 전체 플레이 흐름을 끝까지 구현한 검증 빌드 |
-| 기술 스파이크 | 구현 위험이 큰 기능을 본 개발 전에 최소 범위로 검증하는 작업 |
+| 사육장 | 독립 환경·배치·생물을 가진 플레이 공간 |
+| 벽지 | 사육장 뒷벽(`wall_face`). 배경화면(D-006)과 다름 |
+| 수역 | 논리 물 셀·물고기 유영 공간 |
+| 배경화면 모드 | 데스크톱 관찰 모드 |
+| Walk | 보행 애니 (`walk`). `Move` 폐기 |
 
 ## 현재 확정된 원칙
 

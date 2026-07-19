@@ -32,14 +32,14 @@ Glass Wild의 생물, 식물, 구조물, 장비, 먹이, 바닥, 벽지, 수역,
 ### Cursor / 저장소와 함께 사용
 
 1. `docs/decisions/` (D-002, D-003, D-004, D-007, D-009 등)
-2. `docs/core/habitat-surfaces.md`
+2. `docs/core/glossary.md`, `habitat-surfaces.md`
 3. `docs/art/pixel-art-pipeline.md`, `animation-guide.md`
 4. `docs/mvp/vertical-slice.md`, `scope.md`
 5. `docs/entities/` (역할군·확장 후보)
 
 ### 동기화
 
-`docs/decisions`, `docs/core/habitat-surfaces.md` 또는 `docs/art`가 바뀌면 ChatGPT에 다시 올리기 전에 `SKILL.md` 내장 표를 갱신한다.
+`docs/core/glossary.md`, `docs/decisions`, `docs/core/habitat-surfaces.md` 또는 `docs/art`가 바뀌면 ChatGPT에 다시 올리기 전에 `SKILL.md` 내장 표·용어를 갱신한다.
 
 ## 사용 예시
 

@@ -2,7 +2,7 @@
 
 - 우선순위: P1
 - 상태: Decided
-- 관련 문서: `docs/core/habitat-surfaces.md`, `docs/entities/items.md`, `docs/art/pixel-art-pipeline.md`
+- 관련 문서: `docs/core/habitat-surfaces.md`, `docs/core/glossary.md`, `docs/entities/items.md`, `docs/art/pixel-art-pipeline.md`
 
 ## 최종 결정
 

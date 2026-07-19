@@ -18,6 +18,25 @@ description: Glass Wild 프로젝트에 맞는 Godot용 도트 스프라이트, 
 
 사용자가 이미지 생성을 직접 요청하면 이미지 생성 기능을 사용한다. 프롬프트, 명세 또는 가이드만 요청하면 이미지를 생성하지 않는다.
 
+## Glass Wild 용어
+
+ChatGPT(스킬만): 아래 표를 따른다. Cursor에서 docs를 읽을 수 있으면 [`docs/core/glossary.md`](docs/core/glossary.md)가 이 표보다 우선한다.
+
+| 쓰지 말 것 | 쓸 것 |
+|---|---|
+| `Move` | `Walk` / `walk` |
+| 물 공간 | 수역 |
+| 사육장 뒷벽을 “배경화면” | 벽지 (`wall_face`) |
+| OS wallpaper를 “벽지” | 배경화면 모드 |
+| `substrate_tile` / `wall_tile` | `floor_tile` / `wall_face` |
+
+| 용어 | 요지 |
+|---|---|
+| 벽지 | 사육장 뒷벽 베이스. 배경화면(D-006)과 다름 |
+| 수역 | 물고기 `Swim` 공간 (`water_body`) |
+| zone | `air` / `water` |
+| contact_mode | `ground` / `water` / `surface` |
+
 ## 규칙 권한 (환경별)
 
 ### ChatGPT / 저장소 없음 (기본)
@@ -38,7 +57,8 @@ description: Glass Wild 프로젝트에 맞는 Godot용 도트 스프라이트, 
 2. `docs/art/pixel-art-pipeline.md`, `docs/art/animation-guide.md`
 3. `docs/mvp/vertical-slice.md`, `docs/mvp/scope.md`
 4. `docs/core/habitat-surfaces.md` — 바닥·벽지·수역
-5. `docs/entities/` — 역할군·확장 후보 (D-007은 첫 축 예시, 목록 밖 거부 금지)
+5. `docs/core/glossary.md` — 고유 용어·치환표
+6. `docs/entities/` — 역할군·확장 후보 (D-007은 첫 축 예시, 목록 밖 거부 금지)
 
 문서 상태가 `Pending`이면 확정값처럼 말하지 않고 `작업 가정`으로 표시한다. docs를 반영해 내장값과 다르게 작업하면 결과에 `docs 반영: …`을 한 줄로만 적는다.
 
