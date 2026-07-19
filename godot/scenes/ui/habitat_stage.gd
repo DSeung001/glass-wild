@@ -1,10 +1,22 @@
 extends Control
-## Side-view habitat: logic cells 0.5cm, display grid N=4, paint/place (D-010).
+## Side-view habitat: colored placeholders until pixel art (D-010).
 
 const WireActorScript := preload("res://scenes/ui/wire_actor.gd")
-const CELL_CM := 0.5
-const DISPLAY_EVERY := 4
-const WALL_EDGE_ROWS := 3
+const CELL_CM := 1.0
+const DISPLAY_EVERY_CM := 5.0
+const WALL_EDGE_ROWS := 2
+
+const COL_BG := Color(0.14, 0.16, 0.14)
+const COL_FRAME := Color(0.55, 0.58, 0.52)
+const COL_WATERLINE := Color(0.35, 0.55, 0.75)
+const COL_WATER_BAND := Color(0.18, 0.32, 0.42, 0.45)
+const COL_FLOOR := Color(0.45, 0.32, 0.18)
+const COL_WALL := Color(0.42, 0.40, 0.36)
+const COL_WATER := Color(0.22, 0.48, 0.68)
+const COL_PLANT := Color(0.28, 0.62, 0.32)
+const COL_ANIMAL := Color(0.88, 0.72, 0.28)
+const COL_GRID := Color(1, 1, 1, 0.22)
+const COL_PREVIEW := Color(1, 0.92, 0.4, 0.35)
 
 signal mode_changed(is_edit: bool)
 
@@ -12,19 +24,21 @@ var width_cm: int = 60
 var depth_cm: int = 45
 var height_cm: int = 45
 var is_edit: bool = false
+var show_display_grid: bool = true
 var water_ratio: float = 0.33
+## "dot" | "rect" — terrain only
+var terrain_place_mode: String = "dot"
 
-## Selected tool from palette: {kind, id, surfaces?}
+## Selected tool: {kind, id, surfaces?, display_name?}
 var selected_tool: Dictionary = {}
 
-## cell key "x,y" -> "floor" | "wall" | "water"
 var _terrain: Dictionary = {}
-## Array of {kind, id, x, y}
 var _placements: Array[Dictionary] = []
-
 var _actors: Array[Control] = []
-var _painting: bool = false
-var _last_paint_cell: Vector2i = Vector2i(-1, -1)
+
+var _rect_dragging: bool = false
+var _rect_start: Vector2i = Vector2i(-1, -1)
+var _rect_end: Vector2i = Vector2i(-1, -1)
 
 
 func _ready() -> void:
@@ -42,16 +56,26 @@ func _boot_observe() -> void:
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
-	draw_rect(r, Color.WHITE, false, 2.0)
+	draw_rect(r, COL_BG, true)
 
 	var water_y := size.y * (1.0 - water_ratio)
-	draw_line(Vector2(0, water_y), Vector2(size.x, water_y), Color.WHITE, 1.0)
+	draw_rect(Rect2(0, water_y, size.x, size.y - water_y), COL_WATER_BAND, true)
+	draw_line(Vector2(0, water_y), Vector2(size.x, water_y), COL_WATERLINE, 2.0)
 
 	_draw_terrain_fills()
 	_draw_placements()
 
-	if is_edit:
+	draw_rect(r, COL_FRAME, false, 2.0)
+
+	if is_edit and show_display_grid:
 		_draw_display_grid()
+
+	if is_edit and _rect_dragging:
+		_draw_rect_preview()
+
+
+func _display_every_cells() -> int:
+	return maxi(1, int(round(DISPLAY_EVERY_CM / CELL_CM)))
 
 
 func _draw_display_grid() -> void:
@@ -59,13 +83,26 @@ func _draw_display_grid() -> void:
 	var gr := grid_rows()
 	if gc < 1 or gr < 1:
 		return
+	var step := _display_every_cells()
 	var cs := cell_size_px()
-	for i in range(DISPLAY_EVERY, gc, DISPLAY_EVERY):
+	for i in range(step, gc, step):
 		var x := float(i) * cs.x
-		draw_line(Vector2(x, 0), Vector2(x, size.y), Color(1, 1, 1, 0.35), 1.0)
-	for j in range(DISPLAY_EVERY, gr, DISPLAY_EVERY):
+		draw_line(Vector2(x, 0), Vector2(x, size.y), COL_GRID, 1.0)
+	for j in range(step, gr, step):
 		var y := float(j) * cs.y
-		draw_line(Vector2(0, y), Vector2(size.x, y), Color(1, 1, 1, 0.35), 1.0)
+		draw_line(Vector2(0, y), Vector2(size.x, y), COL_GRID, 1.0)
+
+
+func _terrain_color(kind: String) -> Color:
+	match kind:
+		"floor":
+			return COL_FLOOR
+		"wall":
+			return COL_WALL
+		"water":
+			return COL_WATER
+		_:
+			return Color.WHITE
 
 
 func _draw_terrain_fills() -> void:
@@ -74,28 +111,37 @@ func _draw_terrain_fills() -> void:
 		var cell := _parse_key(key)
 		var kind: String = _terrain[key]
 		var rect := Rect2(Vector2(cell) * cs, cs)
-		match kind:
-			"floor":
-				draw_rect(rect, Color(1, 1, 1, 0.12), true)
-				draw_rect(rect, Color.WHITE, false, 1.0)
-			"wall":
-				draw_rect(rect, Color(1, 1, 1, 0.06), true)
-				draw_rect(rect, Color(1, 1, 1, 0.7), false, 1.0)
-			"water":
-				draw_rect(rect, Color(1, 1, 1, 0.18), true)
+		draw_rect(rect, _terrain_color(kind), true)
 
 
 func _draw_placements() -> void:
 	var cs := cell_size_px()
 	for p in _placements:
+		if p["kind"] == "animal":
+			continue  # colored rect + label via wire_actor
 		var origin := Vector2(p["x"], p["y"]) * cs
-		var rect := Rect2(origin + cs * 0.15, cs * 0.7)
-		draw_rect(rect, Color.WHITE, false, 1.5)
-		# Tiny mark: plant vs animal
+		var rect := Rect2(origin + cs * 0.1, cs * 0.8)
 		if p["kind"] == "plant":
-			draw_line(origin + Vector2(cs.x * 0.5, cs.y * 0.2), origin + Vector2(cs.x * 0.5, cs.y * 0.8), Color.WHITE, 1.0)
-		elif p["kind"] == "animal":
-			draw_circle(origin + cs * 0.5, min(cs.x, cs.y) * 0.15, Color.WHITE)
+			draw_rect(rect, COL_PLANT, true)
+		else:
+			draw_rect(rect, Color.WHITE, false, 1.5)
+
+
+func _draw_rect_preview() -> void:
+	var a := _rect_start
+	var b := _rect_end
+	if a.x < 0 or b.x < 0:
+		return
+	var x0 := mini(a.x, b.x)
+	var y0 := mini(a.y, b.y)
+	var x1 := maxi(a.x, b.x) + 1
+	var y1 := maxi(a.y, b.y) + 1
+	var cs := cell_size_px()
+	var rect := Rect2(Vector2(x0, y0) * cs, Vector2(x1 - x0, y1 - y0) * cs)
+	var fill := _terrain_color(String(selected_tool.get("id", "")))
+	fill.a = 0.45
+	draw_rect(rect, fill, true)
+	draw_rect(rect, COL_PREVIEW, false, 2.0)
 
 
 func grid_cols() -> int:
@@ -121,13 +167,14 @@ func set_preset(w: int, d: int, h: int) -> void:
 	_terrain.clear()
 	_placements.clear()
 	_clear_actors()
+	_cancel_rect()
 	queue_redraw()
 	_on_resized()
 
 
 func set_edit_mode(edit: bool) -> void:
 	is_edit = edit
-	_painting = false
+	_cancel_rect()
 	for actor in _actors:
 		if actor.has_method("set_wander_enabled"):
 			actor.set_wander_enabled(not edit)
@@ -135,8 +182,19 @@ func set_edit_mode(edit: bool) -> void:
 	mode_changed.emit(edit)
 
 
+func set_show_display_grid(on: bool) -> void:
+	show_display_grid = on
+	queue_redraw()
+
+
+func set_terrain_place_mode(mode: String) -> void:
+	terrain_place_mode = mode
+	_cancel_rect()
+
+
 func set_selected_tool(tool: Dictionary) -> void:
 	selected_tool = tool
+	_cancel_rect()
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -147,37 +205,64 @@ func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		var cell := _cell_at(event.position)
 		if not _in_grid(cell):
+			if not event.pressed:
+				_cancel_rect()
 			return
 		if event.pressed:
 			if kind == "terrain":
-				_painting = true
-				_last_paint_cell = Vector2i(-1, -1)
-				_paint_cell(cell)
+				if terrain_place_mode == "rect":
+					_rect_dragging = true
+					_rect_start = cell
+					_rect_end = cell
+					queue_redraw()
+				else:
+					_paint_cell(cell)
 			elif kind == "animal" or kind == "plant":
 				_place_click(cell)
 			accept_event()
 		else:
-			_painting = false
+			if kind == "terrain" and terrain_place_mode == "rect" and _rect_dragging:
+				_rect_end = cell
+				_fill_rect(_rect_start, _rect_end)
+				_cancel_rect()
 			accept_event()
-	elif event is InputEventMouseMotion and _painting and kind == "terrain":
+	elif event is InputEventMouseMotion and _rect_dragging and kind == "terrain":
 		var cell := _cell_at(event.position)
 		if _in_grid(cell):
-			_paint_cell(cell)
+			_rect_end = cell
+			queue_redraw()
 		accept_event()
 
 
 func _paint_cell(cell: Vector2i) -> void:
-	if cell == _last_paint_cell:
-		return
-	_last_paint_cell = cell
 	var tid: String = selected_tool.get("id", "")
 	_terrain[_key(cell)] = tid
+	queue_redraw()
+
+
+func _fill_rect(a: Vector2i, b: Vector2i) -> void:
+	var tid: String = selected_tool.get("id", "")
+	var x0 := mini(a.x, b.x)
+	var y0 := mini(a.y, b.y)
+	var x1 := maxi(a.x, b.x)
+	var y1 := maxi(a.y, b.y)
+	for y in range(y0, y1 + 1):
+		for x in range(x0, x1 + 1):
+			_terrain[_key(Vector2i(x, y))] = tid
+	queue_redraw()
+
+
+func _cancel_rect() -> void:
+	_rect_dragging = false
+	_rect_start = Vector2i(-1, -1)
+	_rect_end = Vector2i(-1, -1)
 	queue_redraw()
 
 
 func _place_click(cell: Vector2i) -> void:
 	var kind: String = selected_tool.get("kind", "")
 	var id: String = selected_tool.get("id", "")
+	var display_name: String = String(selected_tool.get("display_name", id))
 	if kind == "plant":
 		var surfaces: Array = selected_tool.get("surfaces", [])
 		if not _surface_allows(cell, surfaces):
@@ -187,7 +272,16 @@ func _place_click(cell: Vector2i) -> void:
 		if int(p["x"]) == cell.x and int(p["y"]) == cell.y and String(p["kind"]) == kind:
 			continue
 		next.append(p)
-	next.append({"kind": kind, "id": id, "x": cell.x, "y": cell.y})
+	var entry := {
+		"kind": kind,
+		"id": id,
+		"display_name": display_name,
+		"x": cell.x,
+		"y": cell.y,
+	}
+	if kind == "animal" and selected_tool.has("color"):
+		entry["color"] = selected_tool["color"]
+	next.append(entry)
 	_placements = next
 	if kind == "animal":
 		_sync_animal_actors()
@@ -232,11 +326,16 @@ func _sync_animal_actors() -> void:
 		_actors.append(actor)
 		actor.position = Vector2(p["x"], p["y"]) * cs
 		var tag := Label.new()
-		tag.text = String(p["id"])
+		tag.text = String(p.get("display_name", p["id"]))
 		tag.add_theme_font_size_override("font_size", 10)
-		tag.add_theme_color_override("font_color", Color.WHITE)
+		tag.add_theme_color_override("font_color", Color(0.95, 0.95, 0.9))
 		tag.position = Vector2(0, -14)
 		actor.add_child(tag)
+		if actor.has_method("set_fill_color"):
+			var c: Color = COL_ANIMAL
+			if p.has("color"):
+				c = p["color"] as Color
+			actor.call("set_fill_color", c)
 		if actor.has_method("set_bounds"):
 			actor.set_bounds(Rect2(Vector2.ZERO, size))
 		if actor.has_method("set_wander_enabled"):

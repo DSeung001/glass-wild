@@ -79,7 +79,7 @@
 - [`decisions/D-007-mvp-content-count.md`](decisions/D-007-mvp-content-count.md): MVP 첫 축 예시(열대 팔루다리움), 동물군 확장 가능
 - [`decisions/D-008-figma-exit-criteria.md`](decisions/D-008-figma-exit-criteria.md): Figma 완료와 Godot 진입 기준
 - [`decisions/D-009-habitat-surfaces-water.md`](decisions/D-009-habitat-surfaces-water.md): 바닥·벽지·수역, 수중 식재, 유체 물리 MVP 제외
-- [`decisions/D-010-logic-cell-edit-palette.md`](decisions/D-010-logic-cell-edit-palette.md): 논리 셀 0.5cm, 편집 팔레트 제스처
+- [`decisions/D-010-logic-cell-edit-palette.md`](decisions/D-010-logic-cell-edit-palette.md): 논리 셀 1cm, 표시 격자 5cm·토글, 편집 팔레트
 
 ## 주요 용어
 
@@ -92,7 +92,7 @@
 | 수역 | 논리 물 셀·물고기 유영 공간 |
 | 배경화면 모드 | 데스크톱 관찰 모드 |
 | Walk | 보행 애니 (`walk`). `Move` 폐기 |
-| 논리 셀 | 배치·판정 최소 단위, 한 변 0.5cm (D-010) |
+| 논리 셀 | 배치·판정 최소 단위, 한 변 1cm (D-010) |
 
 ## 현재 확정된 원칙
 
@@ -108,7 +108,7 @@
 | MVP 사망 없음, 부상·격리·병원 회복 | 확정 (D-005) |
 | 현실 참고 + 가상 이름, 게임적 과장 | 확정 (D-004) |
 | 논리 격자 + 블록형 편집 | 확정 (D-003) |
-| 논리 셀 0.5cm · 편집 팔레트 제스처 | 확정 (D-010) |
+| 논리 셀 1cm · 표시 격자 5cm · 편집 팔레트 | 확정 (D-010) |
 | 바닥·벽지·수역 레이어, 수중 식재 | 확정 (D-009), 유체 물리 MVP 제외 |
 | 오프라인 진행 | MVP 제외 |
 | 번식과 유전 | MVP 제외 |

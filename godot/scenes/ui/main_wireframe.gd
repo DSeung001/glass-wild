@@ -1,9 +1,10 @@
 extends Control
-## B/W wireframe: observe / edit, size presets, edit palette (D-010).
+## Color placeholders (pixel art later): observe / edit, size presets, palette.
 ## See docs/guides/godot-beginner.md
 
 const HabitatStageScript := preload("res://scenes/ui/habitat_stage.gd")
 const EditPaletteScript := preload("res://scenes/ui/edit_palette.gd")
+const CELL_CM := 1.0
 
 const PRESETS: Array[Dictionary] = [
 	{"label": "30×30×45cm", "w": 30, "d": 30, "h": 45},
@@ -19,12 +20,14 @@ const DEFAULT_PRESET_INDEX := 2
 var _status_label: Label
 var _depth_label: Label
 var _mode_button: Button
+var _grid_button: Button
 var _size_option: OptionButton
 var _aspect: AspectRatioContainer
 var _stage: Control
 var _palette: Control
 var _palette_wrap: Control
 var _is_edit: bool = false
+var _grid_on: bool = true
 
 
 func _ready() -> void:
@@ -43,25 +46,25 @@ func _build_ui() -> void:
 
 	var root := VBoxContainer.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	root.add_theme_constant_override("separation", 12)
+	root.add_theme_constant_override("separation", 6)
 	add_child(root)
 
 	var margin_top := MarginContainer.new()
-	margin_top.add_theme_constant_override("margin_left", 24)
-	margin_top.add_theme_constant_override("margin_right", 24)
-	margin_top.add_theme_constant_override("margin_top", 16)
+	margin_top.add_theme_constant_override("margin_left", 12)
+	margin_top.add_theme_constant_override("margin_right", 12)
+	margin_top.add_theme_constant_override("margin_top", 8)
 	root.add_child(margin_top)
 
 	var chrome := HBoxContainer.new()
-	chrome.add_theme_constant_override("separation", 16)
+	chrome.add_theme_constant_override("separation", 8)
 	margin_top.add_child(chrome)
 
-	chrome.add_child(_wire_label("Glass Wild — 와이어프레임", 22))
+	chrome.add_child(_wire_label("Glass Wild", 16))
 	chrome.add_child(_spacer())
-	chrome.add_child(_wire_label("사육장 규격", 14))
+	chrome.add_child(_wire_label("규격", 12))
 
 	_size_option = OptionButton.new()
-	_size_option.custom_minimum_size = Vector2(180, 36)
+	_size_option.custom_minimum_size = Vector2(140, 28)
 	for i in PRESETS.size():
 		_size_option.add_item(PRESETS[i]["label"], i)
 	_size_option.select(DEFAULT_PRESET_INDEX)
@@ -70,29 +73,36 @@ func _build_ui() -> void:
 	chrome.add_child(_size_option)
 
 	_mode_button = Button.new()
-	_mode_button.custom_minimum_size = Vector2(120, 36)
+	_mode_button.custom_minimum_size = Vector2(72, 28)
 	_mode_button.pressed.connect(_on_mode_pressed)
 	_style_button(_mode_button)
 	chrome.add_child(_mode_button)
 
+	_grid_button = Button.new()
+	_grid_button.custom_minimum_size = Vector2(88, 28)
+	_grid_button.pressed.connect(_on_grid_pressed)
+	_style_button(_grid_button)
+	_update_grid_button_text()
+	chrome.add_child(_grid_button)
+
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("separation", 16)
+	body.add_theme_constant_override("separation", 8)
 	root.add_child(body)
 
 	var stage_margin := MarginContainer.new()
 	stage_margin.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	stage_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	stage_margin.add_theme_constant_override("margin_left", 48)
-	stage_margin.add_theme_constant_override("margin_bottom", 8)
+	stage_margin.add_theme_constant_override("margin_left", 24)
+	stage_margin.add_theme_constant_override("margin_bottom", 4)
 	body.add_child(stage_margin)
 
 	_aspect = AspectRatioContainer.new()
 	_aspect.alignment_horizontal = AspectRatioContainer.ALIGNMENT_CENTER
 	_aspect.alignment_vertical = AspectRatioContainer.ALIGNMENT_CENTER
 	_aspect.stretch_mode = AspectRatioContainer.STRETCH_FIT
-	_aspect.custom_minimum_size = Vector2(320, 240)
+	_aspect.custom_minimum_size = Vector2(240, 180)
 	_aspect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_aspect.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	stage_margin.add_child(_aspect)
@@ -104,9 +114,9 @@ func _build_ui() -> void:
 
 	_palette_wrap = MarginContainer.new()
 	_palette_wrap.visible = false
-	_palette_wrap.add_theme_constant_override("margin_right", 24)
-	_palette_wrap.add_theme_constant_override("margin_top", 8)
-	_palette_wrap.add_theme_constant_override("margin_bottom", 8)
+	_palette_wrap.add_theme_constant_override("margin_right", 12)
+	_palette_wrap.add_theme_constant_override("margin_top", 4)
+	_palette_wrap.add_theme_constant_override("margin_bottom", 4)
 	body.add_child(_palette_wrap)
 
 	_palette = VBoxContainer.new()
@@ -114,19 +124,20 @@ func _build_ui() -> void:
 	_palette_wrap.add_child(_palette)
 	_palette.call("setup", Callable(self, "_style_button"))
 	_palette.tool_selected.connect(_on_tool_selected)
+	_palette.terrain_mode_selected.connect(_on_terrain_mode_selected)
 
 	var footer := MarginContainer.new()
-	footer.add_theme_constant_override("margin_left", 24)
-	footer.add_theme_constant_override("margin_right", 24)
-	footer.add_theme_constant_override("margin_bottom", 20)
+	footer.add_theme_constant_override("margin_left", 12)
+	footer.add_theme_constant_override("margin_right", 12)
+	footer.add_theme_constant_override("margin_bottom", 8)
 	root.add_child(footer)
 
 	var footer_row := HBoxContainer.new()
 	footer.add_child(footer_row)
-	_status_label = _wire_label("상태: 안정", 18)
+	_status_label = _wire_label("상태: 안정", 13)
 	footer_row.add_child(_status_label)
 	footer_row.add_child(_spacer())
-	_depth_label = _wire_label("", 14)
+	_depth_label = _wire_label("", 11)
 	footer_row.add_child(_depth_label)
 
 
@@ -138,26 +149,43 @@ func _on_mode_pressed() -> void:
 	_set_edit_mode(not _is_edit)
 
 
+func _on_grid_pressed() -> void:
+	_grid_on = not _grid_on
+	_stage.call("set_show_display_grid", _grid_on)
+	_update_grid_button_text()
+
+
+func _update_grid_button_text() -> void:
+	_grid_button.text = "격자 ON" if _grid_on else "격자 OFF"
+
+
 func _on_tool_selected(tool: Dictionary) -> void:
 	_stage.call("set_selected_tool", tool)
+
+
+func _on_terrain_mode_selected(mode: String) -> void:
+	_stage.call("set_terrain_place_mode", mode)
 
 
 func _apply_preset(index: int) -> void:
 	var p: Dictionary = PRESETS[index]
 	_stage.call("set_preset", p["w"], p["d"], p["h"])
 	_aspect.ratio = float(p["w"]) / float(p["h"])
-	var cols := int(round(float(p["w"]) / 0.5))
-	var rows := int(round(float(p["h"]) / 0.5))
-	_depth_label.text = "깊이 %dcm · 논리 셀 %d×%d (0.5cm)" % [p["d"], cols, rows]
+	var cols := int(round(float(p["w"]) / CELL_CM))
+	var rows := int(round(float(p["h"]) / CELL_CM))
+	_depth_label.text = "깊이 %dcm · 논리 셀 %d×%d (1cm) · 표시 5cm" % [p["d"], cols, rows]
 
 
 func _set_edit_mode(edit: bool) -> void:
 	_is_edit = edit
 	_stage.call("set_edit_mode", edit)
 	_palette_wrap.visible = edit
+	_grid_button.visible = edit
+	_grid_button.disabled = not edit
 	if edit:
 		_mode_button.text = "관찰로"
-		_status_label.text = "편집 · 논리 셀 0.5cm"
+		_status_label.text = "편집 · 논리 셀 1cm"
+		_stage.call("set_show_display_grid", _grid_on)
 	else:
 		_mode_button.text = "편집"
 		_status_label.text = "상태: 안정"
@@ -185,7 +213,7 @@ func _style_button(btn: Button) -> void:
 	normal.bg_color = Color.BLACK
 	normal.set_border_width_all(1)
 	normal.border_color = Color.WHITE
-	normal.set_content_margin_all(8)
+	normal.set_content_margin_all(4)
 	btn.add_theme_stylebox_override("normal", normal)
 	var hover := normal.duplicate()
 	hover.bg_color = Color(0.15, 0.15, 0.15)
@@ -202,7 +230,7 @@ func _style_option(opt: OptionButton) -> void:
 	box.bg_color = Color.BLACK
 	box.set_border_width_all(1)
 	box.border_color = Color.WHITE
-	box.set_content_margin_all(8)
+	box.set_content_margin_all(4)
 	opt.add_theme_stylebox_override("normal", box)
 	opt.add_theme_stylebox_override("hover", box)
 	opt.add_theme_stylebox_override("pressed", box)

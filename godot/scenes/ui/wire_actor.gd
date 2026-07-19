@@ -1,10 +1,13 @@
 extends Control
-## Small wire rectangle; wanders only when observe mode enables process.
+## Colored placeholder rect; wanders in observe mode. Pixel art comes later.
 
 const SPEED := 55.0
 const ARRIVE := 4.0
+const FILL := Color(0.88, 0.72, 0.28)
+const OUTLINE := Color(0.25, 0.2, 0.08)
 
 var wander_enabled: bool = false
+var fill_color: Color = FILL
 var _target := Vector2.ZERO
 var _bounds := Rect2()
 
@@ -19,7 +22,14 @@ func _ready() -> void:
 
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, size), Color.WHITE, false, 1.5)
+	var r := Rect2(Vector2.ZERO, size)
+	draw_rect(r, fill_color, true)
+	draw_rect(r, OUTLINE, false, 1.5)
+
+
+func set_fill_color(c: Color) -> void:
+	fill_color = c
+	queue_redraw()
 
 
 func set_wander_enabled(enabled: bool) -> void:
