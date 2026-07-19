@@ -1,0 +1,51 @@
+---
+description: Godot 4.7 GDScript / 씬 편집 규칙
+globs: godot/**/*.{gd,tscn,tres}
+alwaysApply: false
+---
+
+# Godot Project Rules
+
+## Engine
+
+- This project uses Godot 4.7.
+- Use only APIs available in Godot 4.7.
+- Never use Godot 3 APIs or syntax.
+- Use `CharacterBody2D`, not `KinematicBody2D`.
+- Use `await`, not `yield`.
+- Use `@export` and `@onready`, not Godot 3 annotation syntax.
+
+## GDScript safety
+
+- Use statically typed GDScript.
+- Add types to member variables, parameters, local variables when useful, and return values.
+- Every function must declare its return type, including `-> void`.
+- Do not invent methods, properties, signals, input actions, autoloads, or node paths.
+- Search the existing project before referencing a node, signal, input action, resource, or autoload.
+- Prefer explicit types over Variant.
+- Avoid unsafe dynamic method and property access.
+- Use `is` checks before casting when a type mismatch would indicate a bug.
+- Do not suppress warnings unless the reason is documented.
+
+## Project files
+
+- Do not modify files under `.godot/`.
+- Treat `.tscn` and `.tres` files as read-only unless explicitly requested.
+- Do not generate UID values manually.
+- Prefer modifying GDScript instead of manually rewriting scene files.
+- Keep changes minimal and do not perform unrelated refactoring.
+
+## Verification
+
+- Generated code must parse as valid Godot 4.7 GDScript.
+- Check LSP diagnostics after every change.
+- Fix all syntax errors before completing the task.
+- Clearly identify any API usage that could not be verified.
+
+## Glass Wild
+
+- Terminology follows [`docs/core/glossary.md`](docs/core/glossary.md) (`tend` / `walk` / 수역; 벽지 ≠ 배경화면).
+
+## MCP
+
+- Prefer GDScript edits. Use scene MCP tools (`create_scene`, `add_node`, etc.) only when the user explicitly requests scene work.

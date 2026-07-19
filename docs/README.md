@@ -78,7 +78,7 @@
 - [`decisions/D-006-wallpaper-interaction.md`](decisions/D-006-wallpaper-interaction.md): 배경화면 입력과 알림
 - [`decisions/D-007-mvp-content-count.md`](decisions/D-007-mvp-content-count.md): MVP 첫 축 예시(열대 팔루다리움), 동물군 확장 가능
 - [`decisions/D-008-figma-exit-criteria.md`](decisions/D-008-figma-exit-criteria.md): Figma 완료와 Godot 진입 기준
-- [`decisions/D-009-habitat-surfaces-water.md`](decisions/D-009-habitat-surfaces-water.md): 바닥·벽지·수역, 수중 식재, 유체 물리 MVP 제외
+- [`decisions/D-009-habitat-surfaces-water.md`](decisions/D-009-habitat-surfaces-water.md): 바닥·벽지·수역, 수중 식재, Rapier Fluid2D + 셀 베이크
 - [`decisions/D-010-logic-cell-tend-palette.md`](decisions/D-010-logic-cell-tend-palette.md): 논리 셀 1cm, 표시 격자 5cm·토글, 가꾸기 팔레트
 
 ## 주요 용어
@@ -109,7 +109,7 @@
 | 현실 참고 + 가상 이름, 게임적 과장 | 확정 (D-004) |
 | 논리 격자 + 블록형 가꾸기 | 확정 (D-003) |
 | 논리 셀 1cm · 표시 격자 5cm · 가꾸기 팔레트 | 확정 (D-010) |
-| 바닥·벽지·수역 레이어, 수중 식재 | 확정 (D-009), 유체 물리 MVP 제외 |
+| 바닥·벽지·수역 레이어, 수중 식재 | 확정 (D-009), Rapier Fluid2D + 논리 셀 베이크 |
 | 오프라인 진행 | MVP 제외 |
 | 번식과 유전 | MVP 제외 |
 

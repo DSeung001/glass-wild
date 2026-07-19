@@ -1,8 +1,57 @@
 extends VBoxContainer
-## Tend palette: terrain modes + tools (D-010). D-007 paludarium animals.
+## Tend palette: terrain modes + tools (D-010). D-007 + locomotion.
 
 signal tool_selected(tool: Dictionary)
 signal terrain_mode_selected(mode: String)
+
+const LOCO_LAND_CLIMB := {
+	"floor_air": true,
+	"wall_air": true,
+	"wall_air_max_cm_from_floor": -1,
+	"floor_water": false,
+	"wall_water": false,
+	"swim": false,
+}
+const LOCO_FLOOR_ONLY := {
+	"floor_air": true,
+	"wall_air": false,
+	"wall_air_max_cm_from_floor": -1,
+	"floor_water": false,
+	"wall_water": false,
+	"swim": false,
+}
+const LOCO_SWIM := {
+	"floor_air": false,
+	"wall_air": false,
+	"wall_air_max_cm_from_floor": -1,
+	"floor_water": false,
+	"wall_water": false,
+	"swim": true,
+}
+const LOCO_NEWT := {
+	"floor_air": true,
+	"wall_air": true,
+	"wall_air_max_cm_from_floor": 5,
+	"floor_water": true,
+	"wall_water": false,
+	"swim": true,
+}
+const LOCO_NERITE := {
+	"floor_air": false,
+	"wall_air": false,
+	"wall_air_max_cm_from_floor": -1,
+	"floor_water": true,
+	"wall_water": true,
+	"swim": false,
+}
+const LOCO_SHRIMP := {
+	"floor_air": false,
+	"wall_air": false,
+	"wall_air_max_cm_from_floor": -1,
+	"floor_water": true,
+	"wall_water": false,
+	"swim": true,
+}
 
 ## Placeholder colors until pixel art (distinct per animal).
 const TOOLS: Array[Dictionary] = [
@@ -30,6 +79,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "네리트 달팽이",
 		"label": "네리트 달팽이",
 		"color": Color(0.75, 0.78, 0.82),
+		"locomotion": LOCO_NERITE,
 	},
 	{
 		"section": "동물",
@@ -38,6 +88,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "체리새우",
 		"label": "체리새우",
 		"color": Color(0.85, 0.28, 0.32),
+		"locomotion": LOCO_SHRIMP,
 	},
 	{
 		"section": "동물",
@@ -46,6 +97,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "등각류",
 		"label": "등각류",
 		"color": Color(0.55, 0.48, 0.38),
+		"locomotion": LOCO_LAND_CLIMB,
 	},
 	{
 		"section": "동물",
@@ -54,6 +106,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "모어닝게코",
 		"label": "모어닝게코",
 		"color": Color(0.72, 0.62, 0.35),
+		"locomotion": LOCO_LAND_CLIMB,
 	},
 	{
 		"section": "동물",
@@ -62,6 +115,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "스프링테일",
 		"label": "스프링테일",
 		"color": Color(0.9, 0.9, 0.85),
+		"locomotion": LOCO_FLOOR_ONLY,
 	},
 	{
 		"section": "동물",
@@ -70,6 +124,7 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "다트프록",
 		"label": "다트프록",
 		"color": Color(0.2, 0.55, 0.95),
+		"locomotion": LOCO_LAND_CLIMB,
 	},
 	{
 		"section": "동물",
@@ -78,6 +133,16 @@ const TOOLS: Array[Dictionary] = [
 		"display_name": "앤들러 구피",
 		"label": "앤들러 구피",
 		"color": Color(0.95, 0.55, 0.15),
+		"locomotion": LOCO_SWIM,
+	},
+	{
+		"section": "동물",
+		"kind": "animal",
+		"id": "fire_belly_newt",
+		"display_name": "파이어밸리 뉴트",
+		"label": "파이어밸리 뉴트",
+		"color": Color(0.85, 0.35, 0.2),
+		"locomotion": LOCO_NEWT,
 	},
 ]
 

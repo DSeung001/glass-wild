@@ -90,7 +90,7 @@
 | 수위 | 세로 셀 높이로 표현 (shallow / deep 태그 가능) |
 | 유영 | `Swim` 생물은 수역 셀 **중층** 이동 허용 (`contact_mode: water`) |
 | 기질 보행 | `cherry_shrimp` 등은 수중 바닥에서 `Walk` |
-| 흐름 | 선택적 `flow_dir` 태그 + 짧은 도트 애니. **유체 물리 엔진 없음** (D-009) |
+| 흐름 | Rapier `Fluid2D` 입자 역학·연출 + 논리 셀 베이크. 선택적 `flow_dir`·도트 애니 (D-009) |
 | 장비 | `shallow_water`는 얕은 수역을 만드는 배치 형태/장비로 취급 |
 
 ## 생물과의 연결

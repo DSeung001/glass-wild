@@ -1,7 +1,10 @@
 extends Control
 ## Side-view habitat: colored placeholders until pixel art (D-010).
+## Water motion: Rapier Fluid2D; logic water cells baked from particles (D-009).
 
 const WireActorScript := preload("res://scenes/ui/wire_actor.gd")
+const WaterGravity := preload("res://scenes/ui/water_gravity.gd")
+const WaterFluidLayerScript := preload("res://scenes/ui/water_fluid_layer.gd")
 const CELL_CM := 1.0
 const DISPLAY_EVERY_CM := 5.0
 const WALL_EDGE_ROWS := 2
@@ -37,13 +40,42 @@ var _rect_dragging: bool = false
 var _rect_start: Vector2i = Vector2i(-1, -1)
 var _rect_end: Vector2i = Vector2i(-1, -1)
 
+var _fluid_host: SubViewportContainer
+var _fluid_viewport: SubViewport
+var _fluid_layer: Node2D
+
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_setup_fluid_viewport()
 	resized.connect(_on_resized)
 	call_deferred("_on_resized")
 	call_deferred("_boot_observe")
+
+
+func _setup_fluid_viewport() -> void:
+	_fluid_host = SubViewportContainer.new()
+	_fluid_host.name = "WaterFluidHost"
+	_fluid_host.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_fluid_host.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_fluid_host.stretch = true
+	add_child(_fluid_host)
+
+	_fluid_viewport = SubViewport.new()
+	_fluid_viewport.name = "WaterFluidViewport"
+	_fluid_viewport.transparent_bg = true
+	_fluid_viewport.handle_input_locally = false
+	_fluid_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	_fluid_viewport.physics_object_picking = false
+	_fluid_host.add_child(_fluid_viewport)
+
+	_fluid_layer = Node2D.new()
+	_fluid_layer.set_script(WaterFluidLayerScript)
+	_fluid_layer.name = "WaterFluidLayer"
+	_fluid_viewport.add_child(_fluid_layer)
+	if _fluid_layer.has_signal("baked"):
+		_fluid_layer.baked.connect(_on_water_baked)
 
 
 func _boot_observe() -> void:
@@ -92,7 +124,7 @@ func _terrain_color(kind: String) -> Color:
 			return COL_FLOOR
 		"wall":
 			return COL_WALL
-		"water":
+		"water", "water_half":
 			return COL_WATER
 		_:
 			return Color.WHITE
@@ -102,7 +134,10 @@ func _draw_terrain_fills() -> void:
 	var cs := cell_size_px()
 	for key in _terrain.keys():
 		var cell := _parse_key(key)
-		var kind: String = _terrain[key]
+		var kind: String = String(_terrain[key])
+		# Water is drawn by Fluid2DRenderer; only solids here.
+		if WaterGravity.is_water(kind):
+			continue
 		var rect := Rect2(Vector2(cell) * cs, cs)
 		draw_rect(rect, _terrain_color(kind), true)
 
@@ -111,7 +146,7 @@ func _draw_placements() -> void:
 	var cs := cell_size_px()
 	for p in _placements:
 		if p["kind"] == "animal":
-			continue  # colored rect + label via wire_actor
+			continue
 		var origin := Vector2(p["x"], p["y"]) * cs
 		var rect := Rect2(origin + cs * 0.1, cs * 0.8)
 		if p["kind"] == "plant":
@@ -161,6 +196,8 @@ func set_preset(w: int, d: int, h: int) -> void:
 	_placements.clear()
 	_clear_actors()
 	_cancel_rect()
+	if _fluid_layer and _fluid_layer.has_method("clear_all_particles"):
+		_fluid_layer.clear_all_particles()
 	queue_redraw()
 	_on_resized()
 
@@ -168,9 +205,7 @@ func set_preset(w: int, d: int, h: int) -> void:
 func set_tend_mode(tend: bool) -> void:
 	is_tend = tend
 	_cancel_rect()
-	for actor in _actors:
-		if actor.has_method("set_wander_enabled"):
-			actor.set_wander_enabled(not tend)
+	_refresh_actor_wander()
 	queue_redraw()
 	mode_changed.emit(tend)
 
@@ -229,7 +264,9 @@ func _gui_input(event: InputEvent) -> void:
 
 func _paint_cell(cell: Vector2i) -> void:
 	var tid: String = selected_tool.get("id", "")
-	_terrain[_key(cell)] = tid
+	_apply_terrain_cell(cell, tid)
+	_sync_fluid_solids()
+	_refresh_actor_wander()
 	queue_redraw()
 
 
@@ -239,9 +276,56 @@ func _fill_rect(a: Vector2i, b: Vector2i) -> void:
 	var y0 := mini(a.y, b.y)
 	var x1 := maxi(a.x, b.x)
 	var y1 := maxi(a.y, b.y)
+	var water_cells: Array[Vector2i] = []
+	var solid_cells: Array[Vector2i] = []
 	for y in range(y0, y1 + 1):
 		for x in range(x0, x1 + 1):
-			_terrain[_key(Vector2i(x, y))] = tid
+			var cell := Vector2i(x, y)
+			if tid == "water":
+				water_cells.append(cell)
+				_terrain.erase(_key(cell))
+			else:
+				_terrain[_key(cell)] = tid
+				solid_cells.append(cell)
+	if not water_cells.is_empty() and _fluid_layer and _fluid_layer.has_method("inject_water_rect"):
+		_fluid_layer.inject_water_rect(a, b)
+	if not solid_cells.is_empty() and _fluid_layer and _fluid_layer.has_method("remove_particles_in_cells"):
+		_fluid_layer.remove_particles_in_cells(solid_cells)
+	_sync_fluid_solids()
+	_refresh_actor_wander()
+	queue_redraw()
+
+
+func _apply_terrain_cell(cell: Vector2i, tid: String) -> void:
+	if tid == "water":
+		_terrain.erase(_key(cell))
+		if _fluid_layer and _fluid_layer.has_method("inject_water_cell"):
+			_fluid_layer.inject_water_cell(cell)
+	else:
+		_terrain[_key(cell)] = tid
+		if _fluid_layer and _fluid_layer.has_method("remove_particles_in_cells"):
+			_fluid_layer.remove_particles_in_cells([cell])
+
+
+func _sync_fluid_solids() -> void:
+	if _fluid_layer and _fluid_layer.has_method("sync_solids"):
+		_fluid_layer.sync_solids(_terrain)
+
+
+func _on_water_baked(water_map: Dictionary) -> void:
+	# Drop previous baked water; keep floor/wall.
+	var next: Dictionary = {}
+	for key in _terrain.keys():
+		var kind := String(_terrain[key])
+		if not WaterGravity.is_water(kind):
+			next[key] = kind
+	for key in water_map.keys():
+		# Do not overwrite solids.
+		if next.has(key):
+			continue
+		next[key] = water_map[key]
+	_terrain = next
+	_refresh_actor_wander()
 	queue_redraw()
 
 
@@ -260,6 +344,10 @@ func _place_click(cell: Vector2i) -> void:
 		var surfaces: Array = selected_tool.get("surfaces", [])
 		if not _surface_allows(cell, surfaces):
 			return
+	elif kind == "animal":
+		var loco: Dictionary = selected_tool.get("locomotion", {})
+		if loco.is_empty() or not _cell_allows_locomotion(cell, loco):
+			return
 	var next: Array[Dictionary] = []
 	for p in _placements:
 		if int(p["x"]) == cell.x and int(p["y"]) == cell.y and String(p["kind"]) == kind:
@@ -272,8 +360,11 @@ func _place_click(cell: Vector2i) -> void:
 		"x": cell.x,
 		"y": cell.y,
 	}
-	if kind == "animal" and selected_tool.has("color"):
-		entry["color"] = selected_tool["color"]
+	if kind == "animal":
+		if selected_tool.has("color"):
+			entry["color"] = selected_tool["color"]
+		if selected_tool.has("locomotion"):
+			entry["locomotion"] = selected_tool["locomotion"]
 	next.append(entry)
 	_placements = next
 	if kind == "animal":
@@ -292,12 +383,12 @@ func _surface_allows(cell: Vector2i, surfaces: Array) -> bool:
 func _cell_surface_tags(cell: Vector2i) -> Array[String]:
 	var tags: Array[String] = []
 	var terrain: String = String(_terrain.get(_key(cell), ""))
-	# Zone from cell terrain value (not a fixed water-band preview).
-	var zone := "water" if terrain == "water" else "air"
+	var in_water := WaterGravity.is_water(terrain)
+	var zone := "water" if in_water else "air"
 	var is_wall := terrain == "wall" or cell.y < WALL_EDGE_ROWS
 	var is_floor := (
 		terrain == "floor"
-		or terrain == "water"
+		or in_water
 		or cell.y >= grid_rows() - WALL_EDGE_ROWS
 	)
 	if is_wall:
@@ -305,6 +396,51 @@ func _cell_surface_tags(cell: Vector2i) -> Array[String]:
 	if is_floor:
 		tags.append("floor_%s" % zone)
 	return tags
+
+
+func _cell_allows_locomotion(cell: Vector2i, loco: Dictionary) -> bool:
+	if not _in_grid(cell) or loco.is_empty():
+		return false
+	var terrain: String = String(_terrain.get(_key(cell), ""))
+	var from_floor := grid_rows() - 1 - cell.y
+	var in_water := WaterGravity.is_water(terrain)
+	if bool(loco.get("swim", false)) and in_water:
+		return true
+	if bool(loco.get("floor_air", false)) and terrain == "floor":
+		return true
+	if bool(loco.get("floor_water", false)) and in_water:
+		return true
+	if bool(loco.get("wall_air", false)) and terrain == "wall":
+		var max_cm: int = int(loco.get("wall_air_max_cm_from_floor", -1))
+		if max_cm < 0 or from_floor < max_cm:
+			return true
+	if bool(loco.get("wall_water", false)) and terrain == "wall" and _adjacent_to_water(cell):
+		return true
+	return false
+
+
+func _adjacent_to_water(cell: Vector2i) -> bool:
+	var dirs: Array[Vector2i] = [
+		Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)
+	]
+	for d in dirs:
+		var n: Vector2i = cell + d
+		if _in_grid(n) and WaterGravity.is_water(String(_terrain.get(_key(n), ""))):
+			return true
+	return false
+
+
+func _allowed_cell_positions(loco: Dictionary) -> Array[Vector2]:
+	var out: Array[Vector2] = []
+	var cs := cell_size_px()
+	var gc := grid_cols()
+	var gr := grid_rows()
+	for y in range(gr):
+		for x in range(gc):
+			var cell := Vector2i(x, y)
+			if _cell_allows_locomotion(cell, loco):
+				out.append(Vector2(cell) * cs)
+	return out
 
 
 func _sync_animal_actors() -> void:
@@ -317,6 +453,7 @@ func _sync_animal_actors() -> void:
 		actor.set_script(WireActorScript)
 		add_child(actor)
 		_actors.append(actor)
+		actor.set_meta("locomotion", p.get("locomotion", {}))
 		actor.position = Vector2(p["x"], p["y"]) * cs
 		var tag := Label.new()
 		tag.text = String(p.get("display_name", p["id"]))
@@ -331,8 +468,19 @@ func _sync_animal_actors() -> void:
 			actor.call("set_fill_color", c)
 		if actor.has_method("set_bounds"):
 			actor.set_bounds(Rect2(Vector2.ZERO, size))
+	_refresh_actor_wander()
+
+
+func _refresh_actor_wander() -> void:
+	for actor in _actors:
+		var loco: Dictionary = {}
+		if actor.has_meta("locomotion"):
+			loco = actor.get_meta("locomotion")
+		var positions := _allowed_cell_positions(loco)
+		if actor.has_method("set_wander_positions"):
+			actor.call("set_wander_positions", positions)
 		if actor.has_method("set_wander_enabled"):
-			actor.set_wander_enabled(not is_tend)
+			actor.set_wander_enabled(not is_tend and not positions.is_empty())
 
 
 func _clear_actors() -> void:
@@ -367,3 +515,12 @@ func _on_resized() -> void:
 	for actor in _actors:
 		if actor.has_method("set_bounds"):
 			actor.set_bounds(bounds)
+	_refresh_actor_wander()
+	if _fluid_viewport:
+		_fluid_viewport.size = Vector2i(
+			maxi(1, int(round(size.x))),
+			maxi(1, int(round(size.y)))
+		)
+	if _fluid_layer and _fluid_layer.has_method("configure"):
+		_fluid_layer.configure(grid_cols(), grid_rows(), cell_size_px())
+		_sync_fluid_solids()

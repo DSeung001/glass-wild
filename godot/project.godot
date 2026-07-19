@@ -28,6 +28,13 @@ window/size/resizable=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[physics]
+
+2d/physics_engine="Rapier2D"
+2d/default_gravity=980.0
+rapier/fluid/fluid_particle_radius_2d=2.0
+rapier/fluid/fluid_smoothing_factor=1.5
+
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0

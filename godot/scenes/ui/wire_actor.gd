@@ -1,5 +1,5 @@
 extends Control
-## Colored placeholder rect; wanders in observe mode. Pixel art comes later.
+## Colored placeholder; wanders among allowed positions in observe mode.
 
 const SPEED := 55.0
 const ARRIVE := 4.0
@@ -10,6 +10,7 @@ var wander_enabled: bool = false
 var fill_color: Color = FILL
 var _target := Vector2.ZERO
 var _bounds := Rect2()
+var _wander_positions: Array[Vector2] = []
 
 
 func _ready() -> void:
@@ -46,6 +47,12 @@ func set_bounds(bounds: Rect2) -> void:
 		_pick_target()
 
 
+func set_wander_positions(positions: Array[Vector2]) -> void:
+	_wander_positions = positions
+	if wander_enabled:
+		_pick_target()
+
+
 func _process(delta: float) -> void:
 	if not wander_enabled or _bounds.size == Vector2.ZERO:
 		return
@@ -59,6 +66,9 @@ func _process(delta: float) -> void:
 
 
 func _pick_target() -> void:
+	if not _wander_positions.is_empty():
+		_target = _wander_positions[randi() % _wander_positions.size()]
+		return
 	if _bounds.size.x <= size.x or _bounds.size.y <= size.y:
 		_target = position
 		return

@@ -75,6 +75,18 @@ Idle
 
 세로형 프로토타입에서는 달팽이형과 등각류형만 먼저 완성합니다.
 
+## 면·zone별 애니 분기 (예정)
+
+같은 개체가 바닥·벽지·수역을 오가면 **클립을 나눈다**.
+
+| 면 / zone | 기본 이동 클립 | 비고 |
+|---|---|---|
+| `floor_air` / `wall_air` | `walk` (선택 `climb`) | locomotion 허용 시 |
+| `floor_water` / `wall_water` | `walk` (수중 접점) | 새우·달팽이 등 |
+| `swim` | `swim` | 구피·뉴트 수역 등 |
+
+`locomotion` 플래그는 [`../entities/animals.md`](../entities/animals.md)를 따른다. 클립 세트 제작은 세로형·아트 파이프라인 이후.
+
 ## 부드러운 연결 규칙
 
 ### 이동 시작
