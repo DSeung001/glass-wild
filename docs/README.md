@@ -7,8 +7,7 @@
 - 파일 하나에는 하나의 주제만 포함합니다.
 - 게임 규칙은 가능한 한 표와 명시적인 판정 기준으로 작성합니다.
 - `안정`, `정보`, `주의`, `위험`, `긴급` 같은 상태 용어를 문서 전체에서 동일하게 사용합니다.
-- 아직 확정되지 않은 내용은 `검토 필요` 또는 `Pending`으로 표시합니다.
-- 사용자가 직접 결정해야 하는 항목은 `decisions/`에만 기록합니다.
+- 확정된 제품 결정만 `decisions/`에 기록하고, 미결정 선택지·권장안은 문서에 남기지 않습니다.
 - 현실 생물 정보를 게임에 적용하기 전 별도의 검증이 필요합니다.
 - 코드 구조나 Godot 노드 구조는 핵심 게임 규칙과 기술 스파이크 이후 작성합니다.
 
@@ -16,7 +15,7 @@
 
 1. [`core/concept.md`](core/concept.md): 게임의 정체성과 설계 원칙
 2. [`roadmap/development-order.md`](roadmap/development-order.md): 디자인부터 MVP까지 개발 순서
-3. [`decisions/README.md`](decisions/README.md): 사용자가 확정해야 하는 결정 목록
+3. [`decisions/README.md`](decisions/README.md): 확정된 의사결정 목록
 4. [`design/figma-plan.md`](design/figma-plan.md): Figma 파일과 산출물 기준
 5. [`mvp/vertical-slice.md`](mvp/vertical-slice.md): 첫 번째 세로형 프로토타입
 
@@ -66,14 +65,14 @@
 
 ### 사용자 의사결정
 
-- [`decisions/README.md`](decisions/README.md): 결정 등록부와 우선순위
+- [`decisions/README.md`](decisions/README.md): 확정된 결정 등록부
 - [`decisions/D-001-platform-wallpaper.md`](decisions/D-001-platform-wallpaper.md): 플랫폼과 배경화면 MVP 기준
 - [`decisions/D-002-resolution-sprite-size.md`](decisions/D-002-resolution-sprite-size.md): 기준 해상도와 도트 셀 크기
-- [`decisions/D-003-placement-model.md`](decisions/D-003-placement-model.md): 자유 배치와 격자 배치
-- [`decisions/D-004-creature-naming-realism.md`](decisions/D-004-creature-naming-realism.md): 실제 종명과 현실성 수준
-- [`decisions/D-005-failure-death.md`](decisions/D-005-failure-death.md): 사망, 부상과 실패 처리
+- [`decisions/D-003-placement-model.md`](decisions/D-003-placement-model.md): 논리 격자와 블록형 배치
+- [`decisions/D-004-creature-naming-realism.md`](decisions/D-004-creature-naming-realism.md): 현실성 수준과 가상 이름
+- [`decisions/D-005-failure-death.md`](decisions/D-005-failure-death.md): 사망, 부상과 병원 회복
 - [`decisions/D-006-wallpaper-interaction.md`](decisions/D-006-wallpaper-interaction.md): 배경화면 입력과 알림
-- [`decisions/D-007-mvp-content-count.md`](decisions/D-007-mvp-content-count.md): MVP 콘텐츠 수량
+- [`decisions/D-007-mvp-content-count.md`](decisions/D-007-mvp-content-count.md): MVP 열대 팔루다리움 콘텐츠
 - [`decisions/D-008-figma-exit-criteria.md`](decisions/D-008-figma-exit-criteria.md): Figma 완료와 Godot 진입 기준
 
 ## 주요 용어
@@ -98,19 +97,23 @@
 | Godot 기반 2D 도트 스타일 | 확정 |
 | 사육장 3개 | MVP 원칙 |
 | 모든 콘텐츠 최초 공개 | MVP 확정 |
-| 배경화면 관찰 기능 | 제품 핵심, 구현 기준은 결정 필요 |
+| 배경화면 관찰 기능 | 제품 핵심, Windows 우선·스파이크 통과 시 MVP 필수 (D-001) |
 | 환경·공간·관계 3계층 관리 | 확정 |
 | 위험 배치 허용과 사전 경고 | 확정 |
 | 사고 전 대응 시간 제공 | 확정 |
+| MVP 사망 없음, 부상·격리·병원 회복 | 확정 (D-005) |
+| 현실 참고 + 가상 이름, 게임적 과장 | 확정 (D-004) |
+| 논리 격자 + 블록형 편집 | 확정 (D-003) |
 | 오프라인 진행 | MVP 제외 |
 | 번식과 유전 | MVP 제외 |
 
 ## 현재 작업 순서
 
-1. `decisions/`의 P0 항목 확정
-2. Figma Foundations와 핵심 와이어프레임 작성
-3. 배경화면·도트 애니메이션 기술 스파이크
-4. 기술 결과를 Figma에 반영
-5. 달팽이형·등각류형 세로형 프로토타입
-6. 관계 시스템과 사육장 3개 확장
-7. 콘텐츠, 저장, 설정과 성능 안정화
+의사결정(D-001~D-008)은 확정되었습니다.
+
+1. Figma Foundations와 핵심 와이어프레임 작성
+2. 배경화면·도트 애니메이션 기술 스파이크
+3. 기술 결과를 Figma에 반영
+4. 달팽이형·등각류형 세로형 프로토타입
+5. 관계 시스템과 사육장 3개 확장
+6. 콘텐츠, 저장, 설정과 성능 안정화
