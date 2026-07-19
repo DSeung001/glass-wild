@@ -24,9 +24,11 @@ Godot를 처음 쓰는 사람을 위한 **이 저장소 맞춤** 안내입니다
 
 ## 1. Godot 설치
 
-1. [Godot 4 다운로드 (Windows)](https://godotengine.org/download/windows/) — **표준 버전** (`.NET` / C# 아님)
-2. ZIP을 풀고 `Godot_v4*_win64.exe` 실행
-3. 권장: **4.3 이상** 안정판
+학습용 `godot/` 프로젝트 기준 에디터: **Godot 4.7 표준**(C# / .NET 아님).  
+같은 메이저(4.x)라도 가능하면 이 버전으로 연다.
+
+1. [Godot 4 다운로드 (Windows)](https://godotengine.org/download/windows/) — **4.7 표준 버전** (`.NET` / C# 아님)
+2. ZIP을 풀고 `Godot_v4.7*_win64.exe` 실행
 
 ## 2. 프로젝트 열기
 
