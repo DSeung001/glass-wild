@@ -1,9 +1,9 @@
 extends Control
-## Color placeholders (pixel art later): observe / edit, size presets, palette.
+## Color placeholders (pixel art later): observe / tend, size presets, palette.
 ## See docs/guides/godot-beginner.md
 
 const HabitatStageScript := preload("res://scenes/ui/habitat_stage.gd")
-const EditPaletteScript := preload("res://scenes/ui/edit_palette.gd")
+const TendPaletteScript := preload("res://scenes/ui/tend_palette.gd")
 const CELL_CM := 1.0
 
 const PRESETS: Array[Dictionary] = [
@@ -26,7 +26,7 @@ var _aspect: AspectRatioContainer
 var _stage: Control
 var _palette: Control
 var _palette_wrap: Control
-var _is_edit: bool = false
+var _is_tend: bool = false
 var _grid_on: bool = true
 
 
@@ -34,7 +34,7 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_build_ui()
 	_apply_preset(DEFAULT_PRESET_INDEX)
-	_set_edit_mode(false)
+	_set_tend_mode(false)
 
 
 func _build_ui() -> void:
@@ -120,7 +120,7 @@ func _build_ui() -> void:
 	body.add_child(_palette_wrap)
 
 	_palette = VBoxContainer.new()
-	_palette.set_script(EditPaletteScript)
+	_palette.set_script(TendPaletteScript)
 	_palette_wrap.add_child(_palette)
 	_palette.call("setup", Callable(self, "_style_button"))
 	_palette.tool_selected.connect(_on_tool_selected)
@@ -146,7 +146,7 @@ func _on_size_selected(index: int) -> void:
 
 
 func _on_mode_pressed() -> void:
-	_set_edit_mode(not _is_edit)
+	_set_tend_mode(not _is_tend)
 
 
 func _on_grid_pressed() -> void:
@@ -176,18 +176,18 @@ func _apply_preset(index: int) -> void:
 	_depth_label.text = "깊이 %dcm · 논리 셀 %d×%d (1cm) · 표시 5cm" % [p["d"], cols, rows]
 
 
-func _set_edit_mode(edit: bool) -> void:
-	_is_edit = edit
-	_stage.call("set_edit_mode", edit)
-	_palette_wrap.visible = edit
-	_grid_button.visible = edit
-	_grid_button.disabled = not edit
-	if edit:
+func _set_tend_mode(tend: bool) -> void:
+	_is_tend = tend
+	_stage.call("set_tend_mode", tend)
+	_palette_wrap.visible = tend
+	_grid_button.visible = tend
+	_grid_button.disabled = not tend
+	if tend:
 		_mode_button.text = "관찰로"
-		_status_label.text = "편집 · 논리 셀 1cm"
+		_status_label.text = "가꾸기 · 논리 셀 1cm"
 		_stage.call("set_show_display_grid", _grid_on)
 	else:
-		_mode_button.text = "편집"
+		_mode_button.text = "가꾸기"
 		_status_label.text = "상태: 안정"
 
 

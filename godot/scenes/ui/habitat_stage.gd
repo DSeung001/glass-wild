@@ -8,8 +8,6 @@ const WALL_EDGE_ROWS := 2
 
 const COL_BG := Color(0.14, 0.16, 0.14)
 const COL_FRAME := Color(0.55, 0.58, 0.52)
-const COL_WATERLINE := Color(0.35, 0.55, 0.75)
-const COL_WATER_BAND := Color(0.18, 0.32, 0.42, 0.45)
 const COL_FLOOR := Color(0.45, 0.32, 0.18)
 const COL_WALL := Color(0.42, 0.40, 0.36)
 const COL_WATER := Color(0.22, 0.48, 0.68)
@@ -18,14 +16,13 @@ const COL_ANIMAL := Color(0.88, 0.72, 0.28)
 const COL_GRID := Color(1, 1, 1, 0.22)
 const COL_PREVIEW := Color(1, 0.92, 0.4, 0.35)
 
-signal mode_changed(is_edit: bool)
+signal mode_changed(is_tend: bool)
 
 var width_cm: int = 60
 var depth_cm: int = 45
 var height_cm: int = 45
-var is_edit: bool = false
+var is_tend: bool = false
 var show_display_grid: bool = true
-var water_ratio: float = 0.33
 ## "dot" | "rect" — terrain only
 var terrain_place_mode: String = "dot"
 
@@ -50,27 +47,23 @@ func _ready() -> void:
 
 
 func _boot_observe() -> void:
-	if not is_edit:
-		set_edit_mode(false)
+	if not is_tend:
+		set_tend_mode(false)
 
 
 func _draw() -> void:
 	var r := Rect2(Vector2.ZERO, size)
 	draw_rect(r, COL_BG, true)
 
-	var water_y := size.y * (1.0 - water_ratio)
-	draw_rect(Rect2(0, water_y, size.x, size.y - water_y), COL_WATER_BAND, true)
-	draw_line(Vector2(0, water_y), Vector2(size.x, water_y), COL_WATERLINE, 2.0)
-
 	_draw_terrain_fills()
 	_draw_placements()
 
 	draw_rect(r, COL_FRAME, false, 2.0)
 
-	if is_edit and show_display_grid:
+	if is_tend and show_display_grid:
 		_draw_display_grid()
 
-	if is_edit and _rect_dragging:
+	if is_tend and _rect_dragging:
 		_draw_rect_preview()
 
 
@@ -172,14 +165,14 @@ func set_preset(w: int, d: int, h: int) -> void:
 	_on_resized()
 
 
-func set_edit_mode(edit: bool) -> void:
-	is_edit = edit
+func set_tend_mode(tend: bool) -> void:
+	is_tend = tend
 	_cancel_rect()
 	for actor in _actors:
 		if actor.has_method("set_wander_enabled"):
-			actor.set_wander_enabled(not edit)
+			actor.set_wander_enabled(not tend)
 	queue_redraw()
-	mode_changed.emit(edit)
+	mode_changed.emit(tend)
 
 
 func set_show_display_grid(on: bool) -> void:
@@ -198,7 +191,7 @@ func set_selected_tool(tool: Dictionary) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if not is_edit or selected_tool.is_empty():
+	if not is_tend or selected_tool.is_empty():
 		return
 
 	var kind: String = selected_tool.get("kind", "")
@@ -299,8 +292,8 @@ func _surface_allows(cell: Vector2i, surfaces: Array) -> bool:
 func _cell_surface_tags(cell: Vector2i) -> Array[String]:
 	var tags: Array[String] = []
 	var terrain: String = String(_terrain.get(_key(cell), ""))
-	var water_row_start := int(float(grid_rows()) * (1.0 - water_ratio))
-	var zone := "water" if cell.y >= water_row_start else "air"
+	# Zone from cell terrain value (not a fixed water-band preview).
+	var zone := "water" if terrain == "water" else "air"
 	var is_wall := terrain == "wall" or cell.y < WALL_EDGE_ROWS
 	var is_floor := (
 		terrain == "floor"
@@ -339,7 +332,7 @@ func _sync_animal_actors() -> void:
 		if actor.has_method("set_bounds"):
 			actor.set_bounds(Rect2(Vector2.ZERO, size))
 		if actor.has_method("set_wander_enabled"):
-			actor.set_wander_enabled(not is_edit)
+			actor.set_wander_enabled(not is_tend)
 
 
 func _clear_actors() -> void:

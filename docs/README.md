@@ -44,7 +44,7 @@
 
 ### UI/UX와 디자인
 
-- [`ui/layout.md`](ui/layout.md): 대시보드, 사육장, 편집, 긴급, 배경화면 화면 구성
+- [`ui/layout.md`](ui/layout.md): 대시보드, 사육장, 가꾸기, 긴급, 배경화면 화면 구성
 - [`ui/flow.md`](ui/flow.md): 배치, 진단, 이동, 경고와 복구 사용자 흐름
 - [`design/figma-plan.md`](design/figma-plan.md): Figma 페이지, 컴포넌트와 완료 기준
 
@@ -79,7 +79,7 @@
 - [`decisions/D-007-mvp-content-count.md`](decisions/D-007-mvp-content-count.md): MVP 첫 축 예시(열대 팔루다리움), 동물군 확장 가능
 - [`decisions/D-008-figma-exit-criteria.md`](decisions/D-008-figma-exit-criteria.md): Figma 완료와 Godot 진입 기준
 - [`decisions/D-009-habitat-surfaces-water.md`](decisions/D-009-habitat-surfaces-water.md): 바닥·벽지·수역, 수중 식재, 유체 물리 MVP 제외
-- [`decisions/D-010-logic-cell-edit-palette.md`](decisions/D-010-logic-cell-edit-palette.md): 논리 셀 1cm, 표시 격자 5cm·토글, 편집 팔레트
+- [`decisions/D-010-logic-cell-tend-palette.md`](decisions/D-010-logic-cell-tend-palette.md): 논리 셀 1cm, 표시 격자 5cm·토글, 가꾸기 팔레트
 
 ## 주요 용어
 
@@ -107,8 +107,8 @@
 | 사고 전 대응 시간 제공 | 확정 |
 | MVP 사망 없음, 부상·격리·병원 회복 | 확정 (D-005) |
 | 현실 참고 + 가상 이름, 게임적 과장 | 확정 (D-004) |
-| 논리 격자 + 블록형 편집 | 확정 (D-003) |
-| 논리 셀 1cm · 표시 격자 5cm · 편집 팔레트 | 확정 (D-010) |
+| 논리 격자 + 블록형 가꾸기 | 확정 (D-003) |
+| 논리 셀 1cm · 표시 격자 5cm · 가꾸기 팔레트 | 확정 (D-010) |
 | 바닥·벽지·수역 레이어, 수중 식재 | 확정 (D-009), 유체 물리 MVP 제외 |
 | 오프라인 진행 | MVP 제외 |
 | 번식과 유전 | MVP 제외 |

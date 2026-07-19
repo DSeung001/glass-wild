@@ -1,5 +1,5 @@
 extends VBoxContainer
-## Edit palette: terrain modes + tools (D-010). D-007 paludarium animals.
+## Tend palette: terrain modes + tools (D-010). D-007 paludarium animals.
 
 signal tool_selected(tool: Dictionary)
 signal terrain_mode_selected(mode: String)
