@@ -19,6 +19,7 @@
 4. [`decisions/README.md`](decisions/README.md): 확정된 의사결정 목록
 5. [`design/figma-plan.md`](design/figma-plan.md): Figma 파일과 산출물 기준
 6. [`mvp/vertical-slice.md`](mvp/vertical-slice.md): 첫 번째 세로형 프로토타입
+7. [`guides/godot-beginner.md`](guides/godot-beginner.md): Godot 초보 · 그림판 와이어 (학습용 [`../godot/`](../godot/))
 
 ## 문서 구조
 

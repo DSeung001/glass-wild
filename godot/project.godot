@@ -1,0 +1,25 @@
+; Engine configuration file.
+; Learning sandbox for Glass Wild wireframes (ColorRect placeholders).
+; Formal MVP Godot work starts after D-008.
+
+config_version=5
+
+[application]
+
+config/name="Glass Wild (Wireframe)"
+config/description="Learning sandbox: ColorRect UI for Dashboard / Habitat / Edit"
+run/main_scene="res://scenes/ui/main_wireframe.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+textures/canvas_textures/default_texture_filter=0
